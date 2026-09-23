@@ -9,6 +9,10 @@ on:
         description: 'Reuse zotero-gecko-aarch64 from this run ID (must match current Gecko inputs)'
         required: false
         type: string
+      gecko_release:
+        description: 'Reuse zotero-gecko-aarch64.tar.gz from this release tag (must match current Gecko inputs)'
+        required: false
+        type: string
   pull_request:
     branches: [main]
     paths: ['termux/**', '.github/workflows/termux-build.yml']
@@ -61,7 +65,15 @@ jobs:
           df -h /
       - name: Fingerprint Gecko independently of the Zotero application
         id: component
-        run: echo "digest=$(python3 scripts/gecko-component.py fingerprint)" >> "$GITHUB_OUTPUT"
+        env:
+          GECKO_RUN: ${{ inputs.gecko_run }}
+          GECKO_RELEASE: ${{ inputs.gecko_release }}
+        run: |
+          if [[ -n "$GECKO_RUN" && -n "$GECKO_RELEASE" ]]; then
+            echo 'Choose either gecko_run or gecko_release, not both' >&2
+            exit 1
+          fi
+          echo "digest=$(python3 scripts/gecko-component.py fingerprint)" >> "$GITHUB_OUTPUT"
       - name: Restore completed Gecko component
         id: gecko-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
@@ -77,6 +89,19 @@ jobs:
           [[ "$GECKO_RUN" =~ ^[0-9]+$ ]]
           gh run download "$GECKO_RUN" --repo "$GITHUB_REPOSITORY" \
             --name zotero-gecko-aarch64 --dir termux-packages/output/gecko-component
+      - name: Download a permanent Gecko release artifact when requested
+        if: steps.gecko-cache.outputs.cache-hit != 'true' && inputs.gecko_release != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GECKO_RELEASE: ${{ inputs.gecko_release }}
+        run: |
+          mkdir -p "$RUNNER_TEMP/zotero-gecko-release"
+          gh release download --repo "$GITHUB_REPOSITORY" \
+            --pattern zotero-gecko-aarch64.tar.gz --dir "$RUNNER_TEMP/zotero-gecko-release" \
+            -- "$GECKO_RELEASE"
+          python3 scripts/gecko-component.py unpack \
+            "$RUNNER_TEMP/zotero-gecko-release/zotero-gecko-aarch64.tar.gz" \
+            termux-packages/output/gecko-component
       - name: Select verified component reuse or source compilation
         id: runtime
         run: |

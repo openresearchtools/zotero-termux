@@ -111,7 +111,26 @@ gh workflow run termux-build.yml --ref main -f gecko_run=RUN_ID
 Select a run containing the standalone artifact; reuse fails if the current
 Gecko inputs differ. Normal runs restore the matching completed component
 automatically and skip Gecko compilation. A validated release also retains its
-Gecko package and checksums as release assets.
+Gecko package, manifest, and checksums in `zotero-gecko-aarch64.tar.gz`. Reuse
+that permanent release asset after an Actions artifact expires:
+
+```sh
+gh workflow run termux-build.yml --ref main -f gecko_release=termux-10.0.3-r1
+```
+
+Choose either `gecko_run` or `gecko_release`. Both paths verify the component
+against the current Gecko inputs before restoring it. Release maintainers bundle
+the verified component with:
+
+```sh
+python3 termux/scripts/gecko-component.py bundle gecko-component zotero-gecko-aarch64.tar.gz
+```
+
+To unpack a downloaded release component locally:
+
+```sh
+python3 termux/scripts/gecko-component.py unpack zotero-gecko-aarch64.tar.gz gecko-component
+```
 
 ## One stable branch and recorded upgrades
 

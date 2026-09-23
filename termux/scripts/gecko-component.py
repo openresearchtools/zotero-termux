@@ -7,6 +7,7 @@ import re
 import shutil
 import subprocess
 import sys
+import tarfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PREFIX = '/data/data/com.termux/files/usr'
@@ -87,6 +88,31 @@ def verify(directory):
     print(f'Verified native Gecko component {manifest["input_sha256"]}: {package.name}')
 
 
+def bundle(directory, archive):
+    verify(directory)
+    files = [directory / 'manifest.json', directory / 'SHA256SUMS', one_package(directory)]
+    with tarfile.open(archive, 'w:gz', compresslevel=1) as stream:
+        for path in files:
+            stream.add(path, arcname=path.name, recursive=False)
+
+
+def unpack(archive, directory):
+    directory.mkdir(parents=True, exist_ok=True)
+    assert not any(directory.iterdir()), 'Component destination must be empty'
+    with tarfile.open(archive, 'r:gz') as stream:
+        members = stream.getmembers()
+        names = {member.name for member in members}
+        packages = {name for name in names if re.fullmatch(r'zotero-gecko_[0-9][0-9A-Za-z.+~:-]*_aarch64\.deb', name)}
+        assert len(packages) == 1 and names == packages | {'manifest.json', 'SHA256SUMS'}, 'Unexpected component archive contents'
+        assert len(members) == 3 and all(member.isfile() for member in members), 'Only three regular files are allowed'
+        # Copy known basenames ourselves: do not apply tar paths, links, owners,
+        # or modes supplied by the archive.
+        for member in members:
+            with stream.extractfile(member) as source, (directory / member.name).open('wb') as dest:
+                shutil.copyfileobj(source, dest)
+    verify(directory)
+
+
 if __name__ == '__main__':
     command = sys.argv[1]
     if command == 'fingerprint':
@@ -95,5 +121,10 @@ if __name__ == '__main__':
         record(pathlib.Path(sys.argv[2]))
     elif command == 'verify':
         verify(pathlib.Path(sys.argv[2]))
+    elif command == 'bundle':
+        bundle(pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3]))
+    elif command == 'unpack':
+        unpack(pathlib.Path(sys.argv[2]), pathlib.Path(sys.argv[3]))
     else:
-        raise SystemExit('Expected fingerprint, record OUTPUT_DIR, or verify COMPONENT_DIR')
+        raise SystemExit('Expected fingerprint, record OUTPUT_DIR, verify COMPONENT_DIR, '
+                         'bundle COMPONENT_DIR ARCHIVE, or unpack ARCHIVE COMPONENT_DIR')
