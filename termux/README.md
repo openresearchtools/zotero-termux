@@ -7,8 +7,8 @@ the official `termux/termux-packages` framework, Android NDK toolchain, dependen
 handling, prefix substitution, ELF cleanup, and Debian packaging.
 
 **Validated on aarch64 Android in native Termux with Termux:X11.** The library UI,
-PDF reader, import/export, bibliography generation, and unattended local API
-writes have passed runtime checks. See [VALIDATION.md](VALIDATION.md) for build
+PDF reader, import/export, bibliography generation, unattended local API writes,
+and LibreOffice citations have passed runtime checks. See [VALIDATION.md](VALIDATION.md) for build
 links, cache evidence, test scope, and remaining desktop integration limitations.
 
 ## Packages
@@ -83,8 +83,9 @@ installer retains its exact upstream multi-platform JNA jar, including desktop
 glibc and other OS binaries. Those resources belong to an external LibreOffice
 JVM; Zotero does not load them. The pinned integration uses JNA's native bridge
 for Windows window activation. This explicitly hash-checked installer resource
-is separate from Zotero's native Bionic runtime. LibreOffice integration itself
-has not been runtime-tested on Android.
+is separate from Zotero's native Bionic runtime. The Java-based LibreOffice
+plugin has also passed native Android citation and document-transfer tests;
+see the installation instructions below for a Termux registration workaround.
 
 To use an existing official framework checkout, copy `packages/zotero*` to its
 `x11-packages/` directory, then build `zotero-gecko` followed by `zotero`.
@@ -216,6 +217,39 @@ checks the user's ability to disable the API through the existing preference.
 
 Android applications share the device's loopback network. Automatic authorization
 therefore applies to other Android apps that can reach the port too.
+
+## LibreOffice citations
+
+Native Termux LibreOffice 26.8.0.3 and OpenJDK 21.0.12 were tested with Zotero's
+unchanged bundled LibreOffice Integration 9.0.2. Install the dependencies:
+
+```sh
+pkg update
+apt install --no-install-recommends libreoffice openjdk-21 openjdk-21-x clang
+```
+
+Close LibreOffice, then run this from the cloned repository in Termux:
+
+```sh
+bash termux/scripts/install-libreoffice-plugin.sh
+DISPLAY=:1 SAL_USE_VCLPLUGIN=gtk3 libreoffice --writer
+```
+
+The helper registers Zotero's bundled `.oxt`. LibreOffice's normal extension
+installer can fail with “couldn't connect to pipe” because a generated UNO
+socket pathname exceeds Unix's limit under Termux's long prefix. A visible
+toolbar after that failure does not prove the Java component is registered.
+The helper temporarily shortens overflowing internal pipe IDs during
+registration, then deletes its compatibility library. No modified LibreOffice
+binaries or Zotero extension are installed, and normal launches need no
+preload. Run the helper again after an extension update if registration fails.
+
+APA 7th edition citations, bibliography insertion, PDF export, DOCX bookmark
+editing after reopening, and a Zotero transfer-document round trip all passed
+through the UI. For Word-compatible editable citations, use Bookmarks in
+Zotero's Document Preferences or its “Switch to a Different Word Processor”
+workflow. Simply saving ReferenceMarks as DOCX loses their active citation
+links. [Full test scope and limitations](VALIDATION.md#libreoffice).
 
 ## Upstream and licensing
 

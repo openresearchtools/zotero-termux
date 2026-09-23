@@ -90,9 +90,70 @@ The audit allows only this exact upstream JAR and SHA-256:
 `34ed1e1f27fa896bca50dbc4e99cf3732967cec387a7a0d5e3486c09673fe8c6`.
 A modified JAR or an unexpected nested glibc ELF fails validation.
 
-Cloud sync, browser connectors, Word/LibreOffice integration, printing, audio
+Cloud sync, browser connectors, Microsoft Word integration, printing, audio
 speech output, and every desktop feature have not been runtime-tested on
 Android. Tests used the standard Termux prefix; custom app prefixes use the
 official framework's substitution and require rebuilding all dependencies for
 that prefix. This is an unofficial port, not an upstream-supported Android
 desktop build.
+
+## LibreOffice
+
+Additional native UI validation on 2026-09-23 used the official Termux
+`libreoffice` **26.8.0.3** package, `openjdk-21`/`openjdk-21-x` **21.0.12**, and
+Zotero's unchanged bundled LibreOffice Integration **9.0.2**. Writer and its
+Java VM ran under the actual Termux UID, using Bionic. No PRoot Linux
+distribution or desktop glibc runtime was used.
+
+Zotero's Add Item by Identifier UI fetched these real DOI records into a
+collection named **LibreOffice APA validation**:
+
+- Miller, G. A. (1956), *The magical number seven, plus or minus two: Some
+  limits on our capacity for processing information.* DOI `10.1037/h0043158`.
+- Shannon, C. E. (1948), *A Mathematical Theory of Communication.* DOI
+  `10.1002/j.1538-7305.1948.tb01338.x`.
+
+Writer's Zotero toolbar opened the citation dialog and Document Preferences.
+APA Style 7th edition generated `(Miller, 1956)` and `(Shannon, 1948)` and a
+two-entry bibliography. The following document operations were performed
+through the UI, with exported files independently inspected afterward:
+
+| Operation | Result |
+| --- | --- |
+| Save native ODT | Two live Zotero citation ReferenceMarks, a live bibliography section, DOI metadata, and APA style preference retained |
+| Refresh | Native plugin refresh succeeds |
+| Export PDF | Both formatted citations and the bibliography remain readable |
+| Switch to a Different Word Processor | DOCX contains Zotero's transfer marker, both complete citation payloads, bibliography payload, and document preferences |
+| Reopen transfer DOCX and Refresh | Zotero detects the transfer and restores live citations; saving as ODT retains both citation fields and bibliography |
+| Bookmarks → DOCX | Reopened formatted DOCX keeps Zotero bookmarks and citation metadata in document properties |
+| Edit reopened DOCX citation | Existing Miller citation opens in Zotero; adding page 81 updates it to `(Miller, 1956, p. 81)` and persists in the saved DOCX |
+
+Microsoft Word and Google Docs themselves were **not** run. The transfer was
+validated by serialization, reopening, and restoration in LibreOffice. The
+[upstream transfer instructions](https://www.zotero.org/support/kb/moving_documents_between_word_processors)
+describe how to complete the handoff in those applications. Plain DOCX export
+with ReferenceMarks is insufficient; use the transfer workflow or Bookmarks.
+
+### Registration failure and workaround
+
+The initial Tools → Extensions → Add installation reached a reproducible
+`Connector: couldn't connect to pipe` error. LibreOffice's random component
+pipe IDs can produce a **114-byte** pathname with Termux's temporary-directory
+prefix; Unix socket paths can hold at most 107 bytes plus a terminator. See
+[LibreOffice's pipe length check](https://github.com/LibreOffice/core/blob/libreoffice-26.8.0.3/sal/osl/unx/pipe.cxx)
+and the [Termux path patch](https://github.com/termux/termux-packages/blob/147df9263fb80af1be00d05bb309e9bdfed5764f/x11-packages/libreoffice/0016-fix-hardcoded-paths-for-termux.patch).
+A clean-profile retest confirmed that restarting alone could leave a visible,
+apparently enabled extension whose citation buttons did nothing.
+
+`scripts/install-libreoffice-plugin.sh` compiles a small temporary compatibility
+library and loads it only for `unopkg add --force` and its child registration
+processes. It maps overflowing ASCII UNO pipe IDs to deterministic 128-bit
+digests without changing socket permissions or transport. The untouched stock
+`.oxt` then registers successfully. The temporary library is removed when the
+installer exits. This was tested with the final helper inside the real Termux
+application sandbox.
+
+After registration, Writer was restarted without `LD_PRELOAD`; process maps
+confirmed no compatibility library was loaded. The native plugin then opened
+Zotero's citation UI, and the document tests above ran without a preload.
+The workaround affects installation only; no new Zotero/Gecko build is needed.
