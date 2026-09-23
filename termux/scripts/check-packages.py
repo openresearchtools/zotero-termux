@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """Reject wrong-ABI packages and verify the packaged application, not its sources."""
+import hashlib
+import io
 import json
 import pathlib
 import re
@@ -13,6 +15,46 @@ def output(*args):
     return subprocess.check_output(args, text=True)
 
 
+def check_elf(file, name):
+    header = output('readelf', '-h', str(file))
+    assert re.search(r'Machine:\s+AArch64', header), name
+    program = output('readelf', '-l', str(file))
+    if 'Requesting program interpreter:' in program:
+        assert '/system/bin/linker64' in program, name
+    dynamic = output('readelf', '-d', str(file))
+    assert not re.search(r'lib(?:c|m|pthread|dl|rt)\.so\.[0-9]|ld-linux', dynamic), name
+    assert 'GLIBC_' not in output('readelf', '-V', str(file)), name
+
+
+def check_archive(data, name):
+    # Preserve the portable upstream LibreOffice installer. This JNA jar is an
+    # external JVM resource, not part of Zotero's loaded Gecko runtime. Its only
+    # native call in the pinned integration is Windows user32 window activation.
+    # The exact hash prevents this exception silently accepting changed payloads.
+    if name == 'integration/libreoffice/Zotero_LibreOffice_Integration.oxt!/external_jars/jna.jar':
+        assert hashlib.sha256(data).hexdigest() == (
+            '34ed1e1f27fa896bca50dbc4e99cf3732967cec387a7a0d5e3486c09673fe8c6'
+        ), 'Upstream LibreOffice JNA changed: review its native payloads'
+        return 0
+    count = 0
+    with zipfile.ZipFile(io.BytesIO(data)) as jar:
+        for member in jar.infolist():
+            if member.is_dir():
+                continue
+            payload = jar.read(member)
+            nested_name = name + '!/' + member.filename
+            if payload.startswith(b'\x7fELF'):
+                with tempfile.NamedTemporaryFile() as tmp:
+                    tmp.write(payload)
+                    tmp.flush()
+                    check_elf(tmp.name, nested_name)
+                count += 1
+            elif pathlib.PurePosixPath(member.filename).suffix.lower() in ARCHIVE_SUFFIXES:
+                count += check_archive(payload, nested_name)
+    return count
+
+
+ARCHIVE_SUFFIXES = {'.ja', '.jar', '.zip', '.xpi', '.oxt'}
 directory = pathlib.Path(sys.argv[1])
 packages = sorted(directory.glob('zotero_*.deb'))
 assert len(packages) == 1, f'Expected one Zotero package, found {packages}'
@@ -44,16 +86,14 @@ for package in packages:
         for file in app.rglob('*'):
             if not file.is_file() or file.is_symlink():
                 continue
+            if file.suffix.lower() in ARCHIVE_SUFFIXES:
+                checked += check_archive(file.read_bytes(), str(file.relative_to(app)))
+                continue
             with file.open('rb') as stream:
                 if stream.read(4) != b'\x7fELF':
                     continue
-            header = output('readelf', '-h', str(file))
-            assert re.search(r'Machine:\s+AArch64', header), file
-            program = output('readelf', '-l', str(file))
-            if 'Requesting program interpreter:' in program:
-                assert '/system/bin/linker64' in program, file
-            dynamic = output('readelf', '-d', str(file))
-            assert not re.search(r'lib(?:c|m|pthread|dl|rt)\.so\.[0-9]|ld-linux', dynamic), file
+            check_elf(file, file)
             checked += 1
         assert checked >= 2
-        print(f'{package.name}: {checked} AArch64 Bionic ELF files; upstream UI, license, API defaults verified')
+        print(f'{package.name}: {checked} AArch64 Bionic runtime ELF files; upstream UI, license, API defaults verified')
+        print('Archives checked; exact upstream multi-platform LibreOffice JNA installer resource preserved')

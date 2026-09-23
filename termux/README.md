@@ -76,6 +76,14 @@ GitHub Actions uses the same commands. Allow several hours and substantial disk
 space for the full Gecko build. The host architecture does not change the
 package ABI: executables are checked for AArch64 and `/system/bin/linker64`.
 
+The check also scans nested application archives. The stock LibreOffice `.oxt`
+installer retains its exact upstream multi-platform JNA jar, including desktop
+glibc and other OS binaries. Those resources belong to an external LibreOffice
+JVM; Zotero does not load them. The pinned integration uses JNA's native bridge
+for Windows window activation. This explicitly hash-checked installer resource
+is separate from Zotero's native Bionic runtime. LibreOffice integration itself
+has not been runtime-tested on Android.
+
 To use an existing official framework checkout, copy `packages/zotero*` to its
 `x11-packages/` directory, then build `zotero-gecko` followed by `zotero`.
 The framework revision tested here and all upstream versions are in `upstream.lock`.
@@ -156,10 +164,12 @@ Once a validated package is available, in aarch64 Termux:
 ```sh
 pkg install x11-repo
 pkg update
+pkg install termux-x11-nightly ttf-dejavu
 apt install ./zotero_10.0.3-1_aarch64.deb
 ```
 
-Start a Termux:X11 session (the Android Termux:X11 APK is also required):
+Install the [official Termux:X11 Android APK](https://github.com/termux/termux-x11/releases/tag/nightly)
+as well as the Termux package above, then start a session:
 
 ```sh
 termux-x11 :1 &
