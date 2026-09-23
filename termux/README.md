@@ -181,15 +181,15 @@ For a custom app/prefix, use the framework's source dependency builds instead.
 
 ## Install and run
 
-Download `zotero_10.0.3-1_aarch64.deb` from the
-[Termux 10.0.3-r1 release](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.3-r1).
+Download `zotero_10.0.3-2_aarch64.deb` from the
+[Termux 10.0.3-r2 release](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.3-r2).
 In aarch64 Termux, from the download directory:
 
 ```sh
 pkg install x11-repo
 pkg update
 pkg install termux-x11-nightly ttf-dejavu
-apt install ./zotero_10.0.3-1_aarch64.deb
+apt install ./zotero_10.0.3-2_aarch64.deb
 ```
 
 Install the [official Termux:X11 Android APK](https://github.com/termux/termux-x11/releases/tag/nightly)
@@ -235,10 +235,10 @@ Save documents and close LibreOffice. In Zotero, open **Settings → Cite → Wo
 Processors → Install/Reinstall LibreOffice Add-in** and follow the existing
 wizard. Termux's `unopkg` is detected automatically. The wizard checks Termux's
 Java packages and can install missing Java components after you select Next.
-Start Writer normally afterward:
+Start Writer normally afterward, from its desktop launcher or a terminal:
 
 ```sh
-DISPLAY=:1 SAL_USE_VCLPLUGIN=gtk3 libreoffice --writer
+DISPLAY=:1 libreoffice --writer
 ```
 
 The package includes a compiled compatibility library. It shortens overflowing

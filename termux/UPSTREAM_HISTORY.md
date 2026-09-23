@@ -17,8 +17,16 @@ Keep this starting-point record when updating the current version.
 
 | Recorded date | Zotero tag | Exact upstream commit | Gecko ESR | Native validation |
 | --- | --- | --- | --- | --- |
-| 2026-09-23 | 10.0.3 | `80bc5565e000c3f24c37e0020713a41ec9f42e09` | 140.15.0esr | [10.0.3-1: native UI, PDF reader, import/export, bibliography, unattended local API writes](VALIDATION.md) |
+| 2026-09-23 | 10.0.3 | `80bc5565e000c3f24c37e0020713a41ec9f42e09` | 140.15.0esr | [10.0.3-2: native UI, LibreOffice installer/citations, Pi helper, Java dependencies; original PDF and API validation](VALIDATION.md) |
 
 Append a row for each stable upstream upgrade, including major upgrades.
 Update `upstream.lock` and the package recipe pins in the same versioned commit.
 Publish a Termux release tag only after its build and runtime checks pass.
+
+## Package revision 2
+
+Recorded on 2026-09-23, with the same stable upstream commit and Gecko runtime.
+Revision 2 adds the Termux LibreOffice UI installer, compiled installation
+compatibility helper, optional Pi skill/extension, and required Java package
+dependencies. [Build and native validation](VALIDATION.md#zotero-1003-2) record
+the exact build commit and released package checksum.

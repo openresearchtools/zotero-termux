@@ -1,4 +1,85 @@
-# Native validation: Zotero 10.0.3-1
+# Native validation
+
+## Zotero 10.0.3-2
+
+Validated on 2026-09-23 in the actual Termux app sandbox on Cuttlefish Android
+17/API 37, aarch64, using Termux:X11 and Openbox. The upstream stable base is
+unchanged: Zotero 10.0.3, commit
+`80bc5565e000c3f24c37e0020713a41ec9f42e09`.
+
+### Final build and package
+
+- [Final GitHub Actions build](https://github.com/openresearchtools/zotero-termux/actions/runs/35897999361):
+  passed, source commit `5b1efd84bb502ac34b46863a38e0fa7871bdb06b`.
+- Released package: `zotero_10.0.3-2_aarch64.deb`.
+- SHA-256: `111e88a2d2ddde693ba8e6dad84dcea8a239bb6b05496b23b2a5f2c39a25675b`.
+- Official Termux recipe lint, pinned upstream comparison, packaged UI/license,
+  API preferences, installer paths, and Pi package contents: passed.
+- All **14 application runtime ELF files**, including the new installation
+  helper, passed the AArch64/Bionic audit. The exact upstream portable JNA
+  resource exception described below remains unchanged.
+- The completed Gecko component was restored and verified. The build log
+  reports `Skipping already built dependency zotero-gecko@140.15.0-1`.
+  Its fingerprint, package checksum and separately downloadable archive remain
+  unchanged from revision 1.
+
+Termux package metadata declares **openjdk-21** and **openjdk-21-x** as required
+`Depends`, with LibreOffice optional. A native APT simulation used a copy of the
+installed-package status database excluding Zotero and both Java packages.
+Installing only the final local Zotero `.deb` selected `openjdk-21`,
+`openjdk-21-x`, and `ca-certificates-java` automatically. The real installed
+Java packages were not removed for this check. The final package was then
+installed successfully through APT in the real Termux app sandbox.
+
+### Normal installation and citation workflow
+
+The tested versions were LibreOffice **26.8.0.3**, OpenJDK **21.0.12**, and the
+unchanged bundled Zotero LibreOffice Integration **9.0.2**.
+
+| Check | Result |
+| --- | --- |
+| Stock Zotero installer | Settings → Cite → Word Processors → Install/Reinstall detects the Termux `unopkg` path and reports Installation Successful |
+| Clean extension installation | The UI installer and Pi installer each registered the extension in a separate initially empty LibreOffice profile |
+| Default user workflow | Final package UI installation also passed with the existing normal profiles, launched through the installed Zotero desktop entry |
+| Ordinary Writer startup | Installed Writer desktop entry works without profile arguments, `JAVA_HOME`, `XDG_CONFIG_HOME`, `SAL_USE_VCLPLUGIN`, or an added `LD_PRELOAD` |
+| Real APA citation | Existing Miller and Shannon DOI citations and the bibliography display correctly; Add/Edit Citation opens the existing live field |
+| Save and reopen | Citation edits persist as live Zotero ReferenceMarks with the bibliography and APA preference intact |
+| Default localhost API | Final package smoke check passed reads, automatic authorization, reusable key, normal empty-payload rejection, and missing-key rejection |
+
+The UI and Pi clean-install checks used temporary profiles to distinguish
+fresh registration from an already installed extension. The final acceptance
+check used normal desktop launchers and the normal user profiles; no temporary
+profile or environment workaround is needed by the user. The saved desktop
+workflow document independently retained two live citation fields, both real
+DOIs, a live bibliography, APA style, and the edited Miller locator, page 85.
+
+The compatibility library is compiled during packaging and loaded only by the
+extension installation process tree. LibreOffice binaries and the stock OXT
+remain unchanged. Normal Zotero and Writer processes run without this preload;
+no compiler or manual registration script is required on the device.
+
+### Pi integration
+
+The packaged `termux/pi` module was tested with **Pi 0.86.1** from Bashkitten,
+using Pi's native package manager, extension loader, skill loader, and actual
+`zotero_libreoffice` tool calls. Status detected the missing extension in a
+fresh profile; install succeeded; subsequent status reported registration.
+Writer then opened and edited a real citation, saved it, and reopened it.
+The final installed Pi package also passed status/install/status on the normal
+profile. While Writer was running, the tool refused installation and the
+packaged wrapper returned exit 75 without closing Writer. Bashkitten's source
+and the user's Pi settings were not changed.
+
+Installer source checks also exercised the standard prefix and a custom app
+prefix, missing Java, missing X11 Java support, and complete Java detection.
+The custom prefix was not separately built or runtime-tested on Android.
+
+The earlier PDF and DOCX conversion checks below used revision 1. Revision 2
+retested installation and live ODT citations; the unchanged Gecko engine and
+upstream document-conversion logic were reused. Microsoft Word and Google Docs
+themselves were not run.
+
+## Original 10.0.3-1 validation
 
 Validated on 2026-09-23 in Cuttlefish, Android 17/API 37, aarch64. Zotero ran
 inside the actual `com.termux` application sandbox (UID 10122,
@@ -6,7 +87,7 @@ inside the actual `com.termux` application sandbox (UID 10122,
 overrides were kept in an isolated profile. The package targets Android API 24;
 older Android versions have not been runtime-tested.
 
-## Source and build evidence
+### Source and build evidence
 
 - Stable upstream: Zotero **10.0.3**, commit
   `80bc5565e000c3f24c37e0020713a41ec9f42e09`.
@@ -24,7 +105,7 @@ The final package SHA-256 is
 Later validation documentation and smoke-test corrections do not change the
 package recipes, source pins, patches, or runtime inputs used by that build.
 
-## Cache evidence
+### Cache evidence
 
 The Gecko build recorded **2,833 compiler-cache hits and 698 misses**: 80.23%
 overall, including 521 Rust hits (93.20%). A previous build failure also left
@@ -48,7 +129,7 @@ bytes. Changed build inputs, altered checksums, traversal paths, and symlink
 archive entries are rejected. The release fallback is available after the
 90-day Actions artifact retention period.
 
-## Runtime checks
+### Runtime checks
 
 | Check | Result |
 | --- | --- |
@@ -76,7 +157,7 @@ the upstream authorization rate limit remain in place. Disabling automatic
 authorization affects new grants; existing remembered keys must be revoked
 through Zotero's authorization controls.
 
-## ABI scope and limitations
+### ABI scope and limitations
 
 All **13 Zotero runtime ELF files** passed the AArch64/Bionic audit: no glibc
 dependencies or `GLIBC_*` symbol versions, and Android's linker for executables.
@@ -97,7 +178,7 @@ official framework's substitution and require rebuilding all dependencies for
 that prefix. This is an unofficial port, not an upstream-supported Android
 desktop build.
 
-## LibreOffice
+### LibreOffice
 
 Additional native UI validation on 2026-09-23 used the official Termux
 `libreoffice` **26.8.0.3** package, `openjdk-21`/`openjdk-21-x` **21.0.12**, and
@@ -134,7 +215,7 @@ validated by serialization, reopening, and restoration in LibreOffice. The
 describe how to complete the handoff in those applications. Plain DOCX export
 with ReferenceMarks is insufficient; use the transfer workflow or Bookmarks.
 
-### Registration failure and workaround
+#### Registration failure and workaround
 
 The initial Tools → Extensions → Add installation reached a reproducible
 `Connector: couldn't connect to pipe` error. LibreOffice's random component
@@ -145,9 +226,8 @@ and the [Termux path patch](https://github.com/termux/termux-packages/blob/147df
 A clean-profile retest confirmed that restarting alone could leave a visible,
 apparently enabled extension whose citation buttons did nothing.
 
-`scripts/install-libreoffice-plugin.sh` compiles a small temporary compatibility
-library and loads it only for `unopkg add --force` and its child registration
-processes. It maps overflowing ASCII UNO pipe IDs to deterministic 128-bit
+The initial prototype compiled a temporary compatibility library and loaded
+it only for `unopkg add --force` and its child registration processes. It maps overflowing ASCII UNO pipe IDs to deterministic 128-bit
 digests without changing socket permissions or transport. The untouched stock
 `.oxt` then registers successfully. The temporary library is removed when the
 installer exits. This was tested with the final helper inside the real Termux
@@ -156,4 +236,6 @@ application sandbox.
 After registration, Writer was restarted without `LD_PRELOAD`; process maps
 confirmed no compatibility library was loaded. The native plugin then opened
 Zotero's citation UI, and the document tests above ran without a preload.
-The workaround affects installation only; no new Zotero/Gecko build is needed.
+The workaround affects installation only. Revision 2 packages this library
+and uses it through Zotero's normal installer and the optional Pi helper,
+superseding the removed compile-on-device script. Gecko remains unchanged.
