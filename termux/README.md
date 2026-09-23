@@ -47,7 +47,7 @@ port through the package manager. Gecko uses Termux's GTK/X11 port configuration
 On an x86_64 Linux host with Docker:
 
 ```sh
-git clone --branch termux https://github.com/openresearchtools/zotero-termux
+git clone --branch main https://github.com/openresearchtools/zotero-termux
 cd zotero-termux/termux
 ./scripts/prepare-builder.sh
 cp scripts/ci-build.sh termux-packages/zotero-ci-build.sh
@@ -66,41 +66,38 @@ To use an existing official framework checkout, copy `packages/zotero*` to its
 `x11-packages/` directory, then build `zotero-gecko` followed by `zotero`.
 The framework revision tested here and all upstream versions are in `upstream.lock`.
 
-## Stable branch and upstream tracking
+## One stable branch and recorded upgrades
 
-This is a real fork of `zotero/zotero` with two separate branch roles:
-
-* `main` tracks upstream development and contains no Termux additions.
-* **`termux` is the default branch**, based on the released Zotero 10.0.3 tag.
-  It contains the stock release source plus this directory, the AGPLv3
-  `LICENSE`, and `.github/workflows/termux-build.yml`.
+**`main` is the only branch in this fork.** Its starting point is the official
+Zotero **10.0.3** release tag at commit
+`80bc5565e000c3f24c37e0020713a41ec9f42e09`. The permanent starting-point record
+and subsequent version history are in [UPSTREAM_HISTORY.md](UPSTREAM_HISTORY.md).
+`upstream.lock` records the version and commit currently being packaged.
 
 The root source files, submodule definitions, `COPYING`, and upstream README
-remain unchanged from the pinned release. CI fetches that release tag from
-`zotero/zotero`, checks its exact commit, and rejects any source differences
-outside the downstream additions. The package recipe builds the same pinned
-release tag from this fork and applies the Termux patches during packaging.
+remain unchanged from the recorded release. CI fetches that release tag from
+`zotero/zotero`, checks its exact commit, and rejects source differences outside
+`termux/`, the added AGPLv3 `LICENSE`, and our separately named workflow. The
+recipe builds the same release tag and applies the Termux patches during
+packaging.
 
-To track upstream development separately:
+Future stable releases, including later 10.x and 11.x versions, are merged into
+this same `main` history. Fetch upstream release tags, merge the selected stable
+tag, update `upstream.lock` and the recipe’s version/commit checks, and update
+Gecko when required. Review the patches and append the version and exact
+upstream commit to `UPSTREAM_HISTORY.md` in a commit such as
+`Update Zotero stable base to 10.x.y`.
 
-```sh
-git remote add upstream https://github.com/zotero/zotero.git # once
-git fetch upstream --tags
-git switch main
-git merge --ff-only upstream/main
-git switch termux
-```
-
-**Do not merge development `main` into `termux`.** To upgrade the port, merge a
-released Zotero tag into `termux`, update `termux/upstream.lock`, the recipe’s
-version and exact commit check, and the matching Gecko version together. Review
-patches, build the aarch64 package, and validate the UI and local API before
-publishing a release. A normal merge retains the separate downstream files;
-review conflicts if upstream ever introduces the same paths.
+Build and validate the aarch64 package, UI, and local API before publishing a
+versioned Termux release. Release tags use the form
+`termux-<Zotero version>-r<package revision>`, keeping them distinct from the
+upstream release tags. Do not merge upstream development `main` or reset this
+fork to upstream: the stable release history and downstream additions grow
+together on our single branch.
 
 Upstream `.github/workflows/ci.yml` is retained unchanged but disabled in this
-fork’s Actions settings. Only the Termux workflow builds packages here.
-The initial packaging repository and its build logs are archived at
+fork’s Actions settings. Only `.github/workflows/termux-build.yml` builds
+packages here. The initial packaging repository and build logs are archived at
 https://github.com/openresearchtools/zotero-termux-build-history.
 
 ## Prefixes and app names

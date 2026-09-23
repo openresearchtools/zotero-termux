@@ -1,11 +1,11 @@
 name: Native Bionic aarch64 packages
 on:
   push:
-    branches: [termux]
+    branches: [main]
     paths: ['termux/**', '.github/workflows/termux-build.yml']
   workflow_dispatch:
   pull_request:
-    branches: [termux]
+    branches: [main]
     paths: ['termux/**', '.github/workflows/termux-build.yml']
 permissions:
   contents: read
