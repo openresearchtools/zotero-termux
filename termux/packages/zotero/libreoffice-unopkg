@@ -16,9 +16,16 @@ unopkg=$1
 shift
 case "$1" in
     add|remove)
-        if pgrep -x soffice.bin >/dev/null; then
+        # Termux procps can report the full executable path as the process name.
+        # Match argv, accepting both absolute paths and the plain basename.
+        running=0
+        pgrep -u "$(id -u)" -f '(^|/)soffice[.]bin([[:space:]]|$)' >/dev/null || running=$?
+        if [[ $running == 0 ]]; then
             echo 'Save your documents and close LibreOffice before installing its plugin.' >&2
             exit 75
+        elif [[ $running != 1 ]]; then
+            echo 'Could not check whether LibreOffice is running.' >&2
+            exit 1
         fi
         ;;
     list) ;;

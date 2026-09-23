@@ -47,7 +47,9 @@ export async function libreOffice(action, { signal } = {}) {
     if (!await exists(path, mode)) missing.push({ path, package: pkg });
   }
   if (missing.length) return { ok: false, action, missing };
-  const running = await run(join(prefix, 'bin/pgrep'), ['-x', 'soffice.bin'], signal);
+  const running = await run(join(prefix, 'bin/pgrep'), [
+    '-u', String(process.getuid()), '-f', '(^|/)soffice[.]bin([[:space:]]|$)',
+  ], signal);
   if (![0, 1].includes(running.code)) {
     return { ok: false, action, error: 'Could not check whether LibreOffice is running.', process: running };
   }
@@ -65,9 +67,12 @@ export async function libreOffice(action, { signal } = {}) {
   }
   const listing = await run(wrapper, [unopkg, 'list', 'org.Zotero.integration.openoffice'], signal);
   const listed = listing.code === 0 && listing.stdout.includes('org.Zotero.integration.openoffice');
-  const enabled = listed && /is registered:\s*yes/i.test(listing.stdout);
+  // Read the bundle's status, not a possibly still-enabled child component.
+  const summary = listing.stdout.split(/\n\s*bundled Packages:/)[0];
+  const enabled = listed && /^\s*is registered:\s*yes\s*$/im.test(summary);
+  const absent = listing.code === 1 && /There is no such extension deployed: org\.Zotero\.integration\.openoffice/.test(listing.stderr);
   return {
-    ok: action === 'status' ? [0, 1].includes(listing.code) : enabled,
+    ok: action === 'status' ? listing.code === 0 || absent : enabled,
     action, prerequisitesReady: true, libreOfficeRunning,
     registration: { listed, enabled, ...listing },
     message: enabled
