@@ -181,9 +181,27 @@ For a custom app/prefix, use the framework's source dependency builds instead.
 
 ## Install and run
 
-Download `zotero_10.0.3-2_aarch64.deb` from the
-[Termux 10.0.3-r2 release](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.3-r2).
-In aarch64 Termux, from the download directory:
+Stable releases are indexed in the signed
+[Open Research Tools APT repository](https://github.com/openresearchtools/apt#native-termux-install-the-termux-keyring-package).
+Set up its native Termux keyring once. In aarch64 Termux:
+
+```sh
+pkg install wget x11-repo
+wget -O "$HOME/openresearchtools-termux-keyring.deb" \
+  https://github.com/openresearchtools/apt/releases/download/repo/openresearchtools-termux-keyring.deb
+apt install "$HOME/openresearchtools-termux-keyring.deb"
+apt update
+apt install zotero
+```
+
+If the repository is already configured, just run `apt update` and
+`apt install zotero`. Java dependencies are installed automatically. Future
+stable packages are picked up by the hourly catalogue refresh and are available
+through normal APT upgrades.
+
+Alternatively, download `zotero_10.0.3-2_aarch64.deb` from the
+[Termux 10.0.3-r2 release](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.3-r2)
+and install it from the download directory:
 
 ```sh
 pkg install x11-repo

@@ -7,6 +7,35 @@ Validated on 2026-09-23 in the actual Termux app sandbox on Cuttlefish Android
 unchanged: Zotero 10.0.3, commit
 `80bc5565e000c3f24c37e0020713a41ec9f42e09`.
 
+### Signed APT repository
+
+The [repository publisher](https://github.com/openresearchtools/apt/actions/runs/35916100330)
+passed after adding Zotero to `openresearchtools/apt` at commit
+`a239bd86c31f49467b05a770704dec021c5a05e7`. Its hourly refresh tracks stable
+`zotero_*_aarch64.deb` release assets. Both revision 1 and revision 2 are indexed;
+APT selects **10.0.3-2**.
+
+On the native Termux device, the official Open Research Tools Termux keyring
+package installed the signed source definition. `apt-get update` verified the
+repository, and `apt-get install --reinstall zotero` downloaded **104,228,812
+bytes** from the repository into an empty package cache and installed them.
+The downloaded SHA-256 matched the release checksum below. The `InRelease`
+signature and its `Packages` checksum were also independently verified.
+
+With Zotero and Java omitted only from a copy of the package status database,
+`apt-get --simulate install zotero` selected the repository's 10.0.3-2 package,
+`openjdk-21`, `openjdk-21-x`, and Java certificates automatically. The actual
+installed packages and user profiles were preserved.
+
+The repository-installed build was then opened through the normal desktop
+entry. Zotero's Settings → Cite installer detected LibreOffice and reported
+Installation Successful with the normal user profiles. Writer's desktop
+launcher opened the real DOI test document; Add/Edit Citation changed the
+Miller locator to page 86, and Refresh succeeded. The saved ODT independently
+retained both live citation fields, a live bibliography, the DOI metadata, and
+APA style. Neither process used a custom profile, Java environment override,
+or compatibility preload.
+
 ### Final build and package
 
 - [Final GitHub Actions build](https://github.com/openresearchtools/zotero-termux/actions/runs/35897999361):
