@@ -1,0 +1,104 @@
+--- a/chrome/content/zotero/xpcom/zotero.js
++++ b/chrome/content/zotero/xpcom/zotero.js
+@@ -1592,7 +1592,7 @@
+ 				{ domainname: ctypes.ArrayType(ctypes.char, 65) }
+ 			]);
+ 			
+-			let libc = ctypes.open("libc.so.6");
++			let libc = ctypes.open("libc.so");
+ 			let unameC = libc.declare(
+ 				"uname",
+ 				ctypes.default_abi,
+--- a/chrome/content/zotero/xpcom/utilities_internal.js
++++ b/chrome/content/zotero/xpcom/utilities_internal.js
+@@ -2709,7 +2709,7 @@
+ 			if (_x11 === false) return;
+ 			if (!_x11) {
+ 				try {
+-					_x11 = ctypes.open("libX11.so.6");
++					_x11 = ctypes.open("@TERMUX_PREFIX@/lib/libX11.so");
+ 				}
+ 				catch (e) {
+ 					try {
+@@ -2975,7 +2975,7 @@
+ 		}
+ 		// macOS or Linux
+ 		else {
+-			lib = ctypes.open(Zotero.isMac ? "/usr/lib/libSystem.dylib" : "libc.so.6");
++			lib = ctypes.open(Zotero.isMac ? "/usr/lib/libSystem.dylib" : "libc.so");
+ 			let unsetenv = lib.declare(
+ 				"unsetenv",
+ 				ctypes.default_abi,
+--- a/chrome/content/zotero/xpcom/file.js
++++ b/chrome/content/zotero/xpcom/file.js
+@@ -1144,7 +1144,7 @@
+ 				"resource://gre/modules/ctypes.sys.mjs"
+ 			);
+ 			let buf = new (ctypes.ArrayType(ctypes.uint8_t, 2168))();
+-			let lib = ctypes.open(Zotero.isMac ? "/usr/lib/libSystem.B.dylib" : "libc.so.6");
++			let lib = ctypes.open(Zotero.isMac ? "/usr/lib/libSystem.B.dylib" : "libc.so");
+ 			try {
+ 				let statfs = lib.declare(
+ 					"statfs",
+@@ -1425,7 +1425,7 @@
+ 		
+ 		try {
+ 			const libc = ctypes.open(
+-				Services.appinfo.OS === "Darwin" ? "libSystem.B.dylib" : "libc.so.6"
++				Services.appinfo.OS === "Darwin" ? "libSystem.B.dylib" : "libc.so"
+ 			);
+ 			
+ 			const symlink = libc.declare(
+--- a/chrome/content/zotero/xpcom/storage/fileChangeWatcher_inotify.js
++++ b/chrome/content/zotero/xpcom/storage/fileChangeWatcher_inotify.js
+@@ -72,7 +72,7 @@
+ 		);
+ 		this._ctypes = ctypes;
+ 
+-		this._libc = ctypes.open("libc.so.6");
++		this._libc = ctypes.open("libc.so");
+ 
+ 		this._inotifyInit1 = this._libc.declare(
+ 			"inotify_init1", ctypes.default_abi,
+--- a/chrome/content/zotero/xpcom/dns_worker.js
++++ b/chrome/content/zotero/xpcom/dns_worker.js
+@@ -124,7 +124,7 @@
+ 
+ 		var AF_INET = 2, AF_INET6, NI_NUMERICHOST, sockaddr_size, libresolv;
+ 		if (platform == "linux") {
+-			libresolv = ctypes.open("libresolv.so");
++			libresolv = libc; // Bionic provides the resolver in libc.
+ 			sockaddr.define([{"sa_family":ctypes.unsigned_short}]);
+ 			sockaddrSize = function (x) { return x.sa_family == 10 ? 28 : 16; };
+ 			AF_INET6 = 10;
+--- a/chrome/content/zotero/xpcom/fileHandlers.js
++++ b/chrome/content/zotero/xpcom/fileHandlers.js
+@@ -323,21 +323,21 @@
+ 					if (appPath) {
+ 						switch (appPath.toLowerCase()) {
+ 							case 'okular':
+-								appPath = '/usr/bin/okular';
++								appPath = '@TERMUX_PREFIX@/bin/okular';
+ 								break;
+ 
+ 							// It's "Document Viewer" on stock Ubuntu
+ 							case 'document viewer':
+ 							case 'evince':
+-								appPath = '/usr/bin/evince';
++								appPath = '@TERMUX_PREFIX@/bin/evince';
+ 								break;
+ 						}
+ 					}
+-					else if (await IOUtils.exists('/usr/bin/okular')) {
+-						appPath = '/usr/bin/okular';
+-					}
+-					else if (await IOUtils.exists('/usr/bin/evince')) {
+-						appPath = '/usr/bin/evince';
++					else if (await IOUtils.exists('@TERMUX_PREFIX@/bin/okular')) {
++						appPath = '@TERMUX_PREFIX@/bin/okular';
++					}
++					else if (await IOUtils.exists('@TERMUX_PREFIX@/bin/evince')) {
++						appPath = '@TERMUX_PREFIX@/bin/evince';
+ 					}
+ 					else {
+ 						throw new Error('No PDF reader found');

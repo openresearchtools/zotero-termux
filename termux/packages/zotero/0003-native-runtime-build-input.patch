@@ -1,0 +1,28 @@
+--- a/app/scripts/fetch_xulrunner
++++ b/app/scripts/fetch_xulrunner
+@@ -771,7 +771,10 @@
+ 		rm -rf $xdir
+ 		
+ 		archived_file="firefox-$GECKO_VERSION-$arch.tar.xz"
+-		if [ -e "$archived_file" ]; then
++		if [ -n "${ZOTERO_TERMUX_RUNTIME_ARCHIVE:-}" ]; then
++			test "$arch" = arm64
++			cp "$ZOTERO_TERMUX_RUNTIME_ARCHIVE" "firefox-$GECKO_VERSION.tar.xz"
++		elif [ -e "$archived_file" ]; then
+ 			echo "Using $archived_file"
+ 			cp "$archived_file" "firefox-$GECKO_VERSION.tar.xz"
+ 		else
+--- a/app/build.sh
++++ b/app/build.sh
+@@ -1140,8 +1140,9 @@
+ 		cp "$CALLDIR/linux/set_launcher_icon" "$APPDIR"
+ 		
+ 		# Use our own updater, because Mozilla's requires updates signed by Mozilla
+-		check_lfs_file "$CALLDIR/linux/updater.tar.xz"
+-		tar xf "$CALLDIR/linux/updater.tar.xz" --to-stdout updater-$arch > "$APPDIR/updater"
++		# Termux must use the Bionic updater from the compiled runtime.
++		# Distribution policy disables desktop updates; updates are via apt.
++		cp "$runtime_path/updater" "$APPDIR/updater"
+ 		chmod 755 "$APPDIR/updater"
+ 
+ 		# Copy app files

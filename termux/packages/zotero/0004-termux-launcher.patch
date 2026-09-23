@@ -1,0 +1,14 @@
+--- a/app/linux/zotero
++++ b/app/linux/zotero
+@@ -1,4 +1,4 @@
+-#!/bin/bash
++#!@TERMUX_PREFIX@/bin/bash
+ 
+ # Increase open files limit
+ #
+@@ -17,4 +17,4 @@
+ export MOZ_ENABLE_WAYLAND=1
+ 
+ CALLDIR="$(dirname "$(readlink -f "$0")")"
+-"$CALLDIR/zotero-bin" -app "$CALLDIR/app/application.ini" "$@"
++exec "$CALLDIR/zotero-bin" -app "$CALLDIR/app/application.ini" "$@"

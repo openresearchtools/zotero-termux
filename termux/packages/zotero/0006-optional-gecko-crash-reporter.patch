@@ -1,0 +1,17 @@
+--- a/app/scripts/fetch_xulrunner
++++ b/app/scripts/fetch_xulrunner
+@@ -170,9 +170,12 @@
+ 	# Prevent error during network requests
+ 	replace_line 'async lazyInit\(\) \{' 'async lazyInit() { if (this.features) return false;' modules/UrlClassifierExceptionListService.sys.mjs
+ 
+-	# Silence CrashManager "Could not get children of [...]/Crash Reports/events" spam
+-	replace_line '\/\/ Missing events folders are allowed' '\/\/ Missing events folders are allowed (silence warning)
++	# Termux Gecko omits the desktop crash reporter and its JS module.
++	if [ -z "${ZOTERO_TERMUX_RUNTIME_ARCHIVE:-}" ] || [ -f modules/CrashManager.sys.mjs ]; then
++		# Silence CrashManager "Could not get children of [...]/Crash Reports/events" spam
++		replace_line '\/\/ Missing events folders are allowed' '\/\/ Missing events folders are allowed (silence warning)
+         if (ex) return entries;' modules/CrashManager.sys.mjs
++	fi
+ 
+ 	# Several services pull in services-settings (which we strip) and throw
+ 	# at profile-after-change. Remove their #init() methods to prevent errors.

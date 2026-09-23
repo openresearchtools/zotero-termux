@@ -1,0 +1,20 @@
+--- a/chrome/content/zotero/xpcom/file.js
++++ b/chrome/content/zotero/xpcom/file.js
+@@ -742,7 +742,7 @@
+ 	 * Currently this means using /bin/mv, which only works on macOS and Linux
+ 	 */
+ 	this.canMoveDirectoryWithCommand = Zotero.lazy(function () {
+-		var cmd = "/bin/mv";
++		var cmd = Zotero.isMac ? "/bin/mv" : "@TERMUX_PREFIX@/bin/mv";
+ 		return !Zotero.isWin && this.pathToFile(cmd).exists();
+ 	});
+ 	
+@@ -763,7 +763,7 @@
+ 	 */
+ 	this.moveDirectory = async function (oldDir, newDir, options = {}) {
+ 		var maxDepth = options.maxDepth || 10;
+-		var cmd = "/bin/mv";
++		var cmd = Zotero.isMac ? "/bin/mv" : "@TERMUX_PREFIX@/bin/mv";
+ 		var useCmd = this.canMoveDirectoryWithCommand();
+ 		var useFunction = this.canMoveDirectoryWithFunction();
+ 		

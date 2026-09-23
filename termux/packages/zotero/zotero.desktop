@@ -1,0 +1,10 @@
+[Desktop Entry]
+Name=Zotero
+Comment=Collect, organize, cite, and share your research sources
+Exec=@TERMUX_PREFIX@/bin/zotero %U
+Icon=zotero
+Type=Application
+Terminal=false
+Categories=Office;Education;
+MimeType=x-scheme-handler/zotero;text/x-bibtex;application/x-research-info-systems;application/x-endnote-refer;
+StartupWMClass=Zotero
