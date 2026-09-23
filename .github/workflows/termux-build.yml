@@ -2,7 +2,13 @@ name: Native Bionic aarch64 packages
 on:
   push:
     branches: [main]
-    paths: ['termux/**', '.github/workflows/termux-build.yml']
+    paths:
+      - 'termux/**'
+      - '.github/workflows/termux-build.yml'
+      # These documents do not change package inputs.
+      - '!termux/README.md'
+      - '!termux/UPSTREAM_HISTORY.md'
+      - '!termux/VALIDATION.md'
   workflow_dispatch:
     inputs:
       gecko_run:
@@ -15,7 +21,12 @@ on:
         type: string
   pull_request:
     branches: [main]
-    paths: ['termux/**', '.github/workflows/termux-build.yml']
+    paths:
+      - 'termux/**'
+      - '.github/workflows/termux-build.yml'
+      - '!termux/README.md'
+      - '!termux/UPSTREAM_HISTORY.md'
+      - '!termux/VALIDATION.md'
 permissions:
   contents: read
   actions: read
