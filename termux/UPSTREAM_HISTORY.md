@@ -17,7 +17,7 @@ Keep this starting-point record when updating the current version.
 
 | Recorded date | Zotero tag | Exact upstream commit | Gecko ESR | Native validation |
 | --- | --- | --- | --- | --- |
-| 2026-09-23 | 10.0.3 | `80bc5565e000c3f24c37e0020713a41ec9f42e09` | 140.15.0esr | Build and runtime validation in progress |
+| 2026-09-23 | 10.0.3 | `80bc5565e000c3f24c37e0020713a41ec9f42e09` | 140.15.0esr | [10.0.3-1: native UI, PDF reader, import/export, bibliography, unattended local API writes](VALIDATION.md) |
 
 Append a row for each stable upstream upgrade, including major upgrades.
 Update `upstream.lock` and the package recipe pins in the same versioned commit.

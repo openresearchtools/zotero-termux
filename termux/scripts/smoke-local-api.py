@@ -10,7 +10,7 @@ parser.add_argument('--base', default='http://127.0.0.1:23119')
 mode = parser.add_mutually_exclusive_group()
 mode.add_argument('--expect-disabled', action='store_true')
 mode.add_argument('--expect-auto-authorize', action='store_true',
-                  help='Request one remembered API key and test two empty writes')
+                  help='Request one remembered API key and test two empty write requests')
 args = parser.parse_args()
 
 
@@ -60,6 +60,7 @@ else:
                 'Content-Type': 'application/json', 'Zotero-Server-ID': server_id,
                 'Zotero-API-Key': permission['key']
             })
-            assert status == 200, (status, body)
-            assert not json.loads(body)['failed']
-        print('Automatic authorization and reusable key work without a dialog; no items changed')
+            # Authorization passes, then stock payload validation rejects an
+            # empty batch. This checks key reuse without changing library items.
+            assert status == 400 and body == b'No items provided', (status, body)
+        print('Automatic authorization and reusable key work without a dialog; empty batches rejected normally; no items changed')

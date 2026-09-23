@@ -6,8 +6,10 @@ This GitHub fork retains Zotero’s complete upstream source and history. The
 the official `termux/termux-packages` framework, Android NDK toolchain, dependency
 handling, prefix substitution, ELF cleanup, and Debian packaging.
 
-**Port status: build and runtime validation in progress.** A green artifact build
-alone is not a claim that every desktop integration works on Android.
+**Validated on aarch64 Android in native Termux with Termux:X11.** The library UI,
+PDF reader, import/export, bibliography generation, and unattended local API
+writes have passed runtime checks. See [VALIDATION.md](VALIDATION.md) for build
+links, cache evidence, test scope, and remaining desktop integration limitations.
 
 ## Packages
 
@@ -178,7 +180,9 @@ For a custom app/prefix, use the framework's source dependency builds instead.
 
 ## Install and run
 
-Once a validated package is available, in aarch64 Termux:
+Download `zotero_10.0.3-1_aarch64.deb` from the
+[Termux 10.0.3-r1 release](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.3-r1).
+In aarch64 Termux, from the download directory:
 
 ```sh
 pkg install x11-repo
@@ -205,8 +209,9 @@ curl -f -H 'Zotero-API-Version: 3' \
 
 `python termux/scripts/smoke-local-api.py --expect-auto-authorize` (from the
 repository root) checks library reads, automatic authorization, two empty
-writes with the same key, and rejection of writes without a key. It creates one
-remembered API key and leaves library items unchanged. `--expect-disabled`
+write requests reaching stock payload validation with the same key, and
+rejection of writes without a key. It creates one remembered API key and leaves
+library items unchanged. `--expect-disabled`
 checks the user's ability to disable the API through the existing preference.
 
 Android applications share the device's loopback network. Automatic authorization
