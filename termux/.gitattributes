@@ -1,0 +1,3 @@
+# Patch context and upstream notices preserve original whitespace.
+*.patch -whitespace
+licenses/zotero-COPYING -whitespace
