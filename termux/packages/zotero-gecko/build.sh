@@ -3,6 +3,7 @@ TERMUX_PKG_DESCRIPTION="Firefox ESR runtime built for native Bionic Zotero (buil
 TERMUX_PKG_LICENSE="MPL-2.0"
 TERMUX_PKG_MAINTAINER="@openresearchtools"
 TERMUX_PKG_VERSION="140.15.0"
+TERMUX_PKG_REVISION=1
 TERMUX_PKG_EXCLUDED_ARCHES="arm, i686, x86_64"
 TERMUX_RUST_VERSION=1.86.0
 TERMUX_PKG_SRCURL=https://archive.mozilla.org/pub/firefox/releases/${TERMUX_PKG_VERSION}esr/source/firefox-${TERMUX_PKG_VERSION}esr.source.tar.xz
