@@ -80,6 +80,25 @@ for package in packages:
             assert "if (Zotero.Prefs.get('httpServer.localAPI.autoAuthorize'))" in local_api
             assert 'return { allow: true, remember: true };' in local_api
             assert any('zoteroPane.xhtml' in x for x in jar.namelist())
+            installer = jar.read('integration/libreoffice/resource/installer.mjs').decode()
+            # Check the shipped, substituted paths, not just the patch sources.
+            installed_prefix = '/' + str(prefix.relative_to(root))
+            assert f'{installed_prefix}/bin/unopkg' in installer
+            assert f'{installed_prefix}/lib/zotero/libreoffice-unopkg' in installer
+            wizard = jar.read('integration/libreoffice/chrome/install.js').decode()
+            assert 'openjdk-21-x' in wizard and f'{installed_prefix}/bin/apt-get' in wizard
+            assert '@TERMUX_PREFIX@' not in installer + wizard
+        wrapper = (app / 'libreoffice-unopkg').read_text()
+        assert wrapper.startswith(f'#!{installed_prefix}/bin/bash\n')
+        assert '@TERMUX_PREFIX@' not in wrapper
+        assert (app / 'libreoffice-pipe-compat.so').is_file()
+        pi = prefix / 'share/zotero/pi'
+        manifest = json.loads((pi / 'package.json').read_text())
+        for entry in manifest['pi']['extensions']:
+            assert (pi / entry).is_file()
+        for entry in manifest['pi']['skills']:
+            assert (pi / entry / 'SKILL.md').is_file()
+        assert (pi / 'libreoffice.mjs').is_file()
         policy = json.loads((app / 'distribution/policies.json').read_text())
         assert policy['policies']['DisableAppUpdate'] is True
         checked = 0

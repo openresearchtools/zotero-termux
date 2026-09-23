@@ -1,0 +1,33 @@
+#!@TERMUX_PREFIX@/bin/bash
+# SPDX-License-Identifier: AGPL-3.0-only
+# Used by Zotero's own installer and the optional Pi package. Only the
+# unopkg process tree receives this preload, never Zotero or normal Writer.
+set -euo pipefail
+termux_prefix='@TERMUX_PREFIX@'
+if [[ $(id -u) == 0 ]]; then
+    echo 'Run the LibreOffice installer as the normal Termux application user.' >&2
+    exit 1
+fi
+if [[ $# -lt 2 ]]; then
+    echo 'Usage: libreoffice-unopkg /path/to/unopkg add|remove|list [arguments...]' >&2
+    exit 2
+fi
+unopkg=$1
+shift
+case "$1" in
+    add|remove)
+        if pgrep -x soffice.bin >/dev/null; then
+            echo 'Save your documents and close LibreOffice before installing its plugin.' >&2
+            exit 75
+        fi
+        ;;
+    list) ;;
+    *) echo 'Expected add, remove, or list.' >&2; exit 2 ;;
+esac
+export JAVA_HOME="$termux_prefix/lib/jvm/java-21-openjdk"
+if [[ ! -x "$unopkg" || ! -x "$JAVA_HOME/bin/java" || ! -f "$JAVA_HOME/lib/libawt_xawt.so" ]]; then
+    echo 'Install the Termux packages: libreoffice openjdk-21 openjdk-21-x' >&2
+    exit 1
+fi
+export LD_PRELOAD="$termux_prefix/lib/zotero/libreoffice-pipe-compat.so${LD_PRELOAD:+:$LD_PRELOAD}"
+exec "$unopkg" "$@"

@@ -221,28 +221,52 @@ therefore applies to other Android apps that can reach the port too.
 ## LibreOffice citations
 
 Native Termux LibreOffice 26.8.0.3 and OpenJDK 21.0.12 were tested with Zotero's
-unchanged bundled LibreOffice Integration 9.0.2. Install the dependencies:
+unchanged bundled LibreOffice Integration 9.0.2. From package revision 2,
+installation uses Zotero's normal settings UI. Install the dependencies:
 
 ```sh
 pkg update
-apt install --no-install-recommends libreoffice openjdk-21 openjdk-21-x clang
+apt install --no-install-recommends libreoffice openjdk-21 openjdk-21-x
 ```
 
-Close LibreOffice, then run this from the cloned repository in Termux:
+Save documents and close LibreOffice. In Zotero, open **Settings → Cite → Word
+Processors → Install/Reinstall LibreOffice Add-in** and follow the existing
+wizard. Termux's `unopkg` is detected automatically. The wizard checks Termux's
+Java packages and can install missing Java components after you select Next.
+Start Writer normally afterward:
 
 ```sh
-bash termux/scripts/install-libreoffice-plugin.sh
 DISPLAY=:1 SAL_USE_VCLPLUGIN=gtk3 libreoffice --writer
 ```
 
-The helper registers Zotero's bundled `.oxt`. LibreOffice's normal extension
-installer can fail with “couldn't connect to pipe” because a generated UNO
-socket pathname exceeds Unix's limit under Termux's long prefix. A visible
-toolbar after that failure does not prove the Java component is registered.
-The helper temporarily shortens overflowing internal pipe IDs during
-registration, then deletes its compatibility library. No modified LibreOffice
-binaries or Zotero extension are installed, and normal launches need no
-preload. Run the helper again after an extension update if registration fails.
+The package includes a compiled compatibility library. It shortens overflowing
+internal UNO socket names only in the extension installer's process tree. This
+avoids the “couldn't connect to pipe” error caused by Termux's long prefix.
+Zotero and normal LibreOffice launches have no additional preload, and neither
+LibreOffice's binaries nor the official OXT are modified. No compiler or manual
+installation script is needed on the device.
+
+### Pi / Bashkitten
+
+The optional Pi package is maintained in [`pi/`](pi/) and installed with Zotero
+at `$PREFIX/share/zotero/pi`. Load that directory through Pi's normal local
+package mechanism, for example `pi install "$PREFIX/share/zotero/pi"`, then
+reload Pi. Bashkitten can include the same package using its normal Pi package
+configuration; this repository does not modify Bashkitten or user settings.
+
+It provides the `zotero-libreoffice` skill and `zotero_libreoffice` tool with
+`status` and `install` actions. The agent helper calls the same packaged wrapper
+used by Zotero's UI. It reports prerequisites, refuses installation while
+LibreOffice is running, and does not install OS packages or close documents.
+Without the extension loader, the helper is also callable directly:
+
+```sh
+node "$PREFIX/share/zotero/pi/libreoffice.mjs" status
+node "$PREFIX/share/zotero/pi/libreoffice.mjs" install
+```
+
+Registration is not a complete functional test: use Writer's Zotero toolbar to
+verify a live citation. The localhost library API has no plugin-install endpoint.
 
 APA 7th edition citations, bibliography insertion, PDF export, DOCX bookmark
 editing after reopening, and a Zotero transfer-document round trip all passed

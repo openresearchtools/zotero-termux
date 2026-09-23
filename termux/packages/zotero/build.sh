@@ -4,15 +4,16 @@ TERMUX_PKG_LICENSE="AGPL-3.0, MPL-2.0"
 TERMUX_PKG_LICENSE_FILE="COPYING"
 TERMUX_PKG_MAINTAINER="@openresearchtools"
 TERMUX_PKG_VERSION=10.0.3
-TERMUX_PKG_REVISION=1
+TERMUX_PKG_REVISION=2
 TERMUX_PKG_SRCURL=git+https://github.com/openresearchtools/zotero-termux.git
 TERMUX_PKG_GIT_BRANCH="$TERMUX_PKG_VERSION"
 TERMUX_PKG_EXCLUDED_ARCHES="arm, i686, x86_64"
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_AUTO_UPDATE=false
-TERMUX_PKG_DEPENDS="bash, coreutils, ffmpeg, fontconfig, freetype, gdk-pixbuf, glib, gtk3, libandroid-shmem, libandroid-spawn, libc++, libcairo, libevent, libffi, libice, libjpeg-turbo, libnspr, libnss, libpixman, libsm, libvpx, libwebp, libx11, libxcb, libxcomposite, libxdamage, libxext, libxfixes, libxrandr, libxtst, pango, pulseaudio, zlib"
+TERMUX_PKG_DEPENDS="bash, coreutils, ffmpeg, fontconfig, freetype, gdk-pixbuf, glib, gtk3, libandroid-shmem, libandroid-spawn, libc++, libcairo, libevent, libffi, libice, libjpeg-turbo, libnspr, libnss, libpixman, libsm, libvpx, libwebp, libx11, libxcb, libxcomposite, libxdamage, libxext, libxfixes, libxrandr, libxtst, openssl, pango, procps, pulseaudio, zlib"
 TERMUX_PKG_BUILD_DEPENDS="zotero-gecko"
 TERMUX_PKG_RECOMMENDS="ttf-dejavu, termux-x11-nightly"
+TERMUX_PKG_SUGGESTS="libreoffice, openjdk-21, openjdk-21-x"
 
 termux_step_post_get_source() {
 	# The tag is convenient for Termux's git downloader, but a moved tag must fail.
@@ -41,6 +42,10 @@ termux_step_configure() {
 }
 
 termux_step_make() {
+	$CC $CPPFLAGS $CFLAGS -shared -fPIC -Wall -Wextra -Werror \
+		"-DTERMUX_PREFIX=\"$TERMUX_PREFIX\"" \
+		"$TERMUX_PKG_BUILDER_DIR/libreoffice-pipe-compat.c" \
+		$LDFLAGS -lcrypto -ldl -o "$TERMUX_PKG_TMPDIR/libreoffice-pipe-compat.so"
 	npm run build
 	mkdir -p "$TERMUX_PKG_TMPDIR/prepared"
 	app/scripts/prepare_build -s "$TERMUX_PKG_SRCDIR/build" \
@@ -52,6 +57,14 @@ termux_step_make_install() {
 	local dest="$TERMUX_PREFIX/lib/zotero"
 	mkdir -p "$dest"
 	cp -a app/staging/Zotero_linux-arm64/. "$dest/"
+	install -m755 "$TERMUX_PKG_TMPDIR/libreoffice-pipe-compat.so" "$dest/"
+	sed "s|@TERMUX_PREFIX@|$TERMUX_PREFIX|g" \
+		"$TERMUX_PKG_BUILDER_DIR/libreoffice-unopkg" > "$dest/libreoffice-unopkg"
+	chmod 755 "$dest/libreoffice-unopkg"
+	# An optional, normally discovered Pi package; installing Zotero does not
+	# change the user's Pi settings or require Pi/Node to be installed.
+	mkdir -p "$TERMUX_PREFIX/share/zotero/pi"
+	cp -a "$TERMUX_PKG_BUILDER_DIR/pi/." "$TERMUX_PREFIX/share/zotero/pi/"
 	# Package management owns updates. Desktop updates contain glibc binaries.
 	mkdir -p "$dest/distribution"
 	printf '%s\n' '{"policies":{"DisableAppUpdate":true}}' > "$dest/distribution/policies.json"

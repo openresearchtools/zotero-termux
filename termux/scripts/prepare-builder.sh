@@ -14,4 +14,5 @@ for package in zotero zotero-gecko; do
     mkdir -p "$builder/x11-packages/$package"
     cp -a "$root/packages/$package/." "$builder/x11-packages/$package/"
 done
+cp -a "$root/pi" "$builder/x11-packages/zotero/"
 printf 'Recipes installed in %s/x11-packages\n' "$builder"

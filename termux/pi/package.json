@@ -1,0 +1,14 @@
+{
+  "name": "@openresearchtools/pi-zotero-termux",
+  "version": "10.0.3-2",
+  "private": true,
+  "type": "module",
+  "license": "AGPL-3.0-only",
+  "description": "Native Termux Zotero LibreOffice installation for Pi",
+  "keywords": ["pi-package"],
+  "peerDependencies": { "typebox": "*" },
+  "pi": {
+    "extensions": ["./extension.mjs"],
+    "skills": ["./skills/zotero-libreoffice"]
+  }
+}

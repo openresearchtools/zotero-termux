@@ -1,0 +1,175 @@
+--- a/app/modules/zotero-libreoffice-integration/resource/installer.mjs
++++ b/app/modules/zotero-libreoffice-integration/resource/installer.mjs
+@@ -45,15 +45,7 @@
+ 		"C:\\Program Files (x86)\\LibreOffice 5\\program\\unopkg.exe",
+ 	],
+ 	Other:[
+-		"/usr/bin/unopkg",
+-		
+-		"/usr/lib/libreoffice/program/unopkg",
+-		"/usr/lib64/libreoffice/program/unopkg",
+-		
+-		"/usr/lib/libreoffice4/program/unopkg",
+-		"/usr/lib64/libreoffice4/program/unopkg",
+-		"/usr/lib/libreoffice3/program/unopkg",
+-		"/usr/lib64/libreoffice3/program/unopkg",
++		"@TERMUX_PREFIX@/bin/unopkg",
+ 	]
+ };
+ 
+@@ -198,9 +190,9 @@
+ 			}
+ 		}
+ 		else if (Zotero.isLinux) {
+-			let optDir = Plugin.getFile('/opt')
++			let optDir = Plugin.getFile('@TERMUX_PREFIX@/opt')
+ 			if (optDir.exists()) {
+-				await Zotero.File.iterateDirectory('/opt', async (entry) => {
++				await Zotero.File.iterateDirectory('@TERMUX_PREFIX@/opt', async (entry) => {
+ 					if (entry.name.startsWith('libreoffice')) {
+ 						potentialLocations.push(entry.path + '/program/unopkg');
+ 					}
+@@ -285,10 +277,12 @@
+ 				createInstance(Components.interfaces.nsIProcess);
+ 		var path = unopkgPaths.shift();
+ 		Zotero.debug("ZoteroLibreOfficeIntegration: Installing with unopkg at "+path);
+-		proc.init(Plugin.getFile(path));
+-		
+-		proc.runAsync(["remove", "org.Zotero.integration.openoffice"], 2, {"observe":function() {
+-			proc.runAsync(["add", oxt.path], 2, {"observe":function(process, topic) {
++		// Keep upstream's remove/add sequence and success tracking. The wrapper
++		// sets the registration-only environment without preloading Zotero.
++		proc.init(Plugin.getFile("@TERMUX_PREFIX@/lib/zotero/libreoffice-unopkg"));
++		
++		proc.runAsync([path, "remove", "org.Zotero.integration.openoffice"], 3, {"observe":function() {
++			proc.runAsync([path, "add", oxt.path], 3, {"observe":function(process, topic) {
+ 				if(topic === "process-finished" && !process.exitValue) {
+ 					// recursively continue installing until all unopkgPaths are exhausted
+ 					installComponent(oxt, unopkgPaths, callback);
+--- a/app/modules/zotero-libreoffice-integration/chrome/install.js
++++ b/app/modules/zotero-libreoffice-integration/chrome/install.js
+@@ -102,73 +102,14 @@
+ function checkJavaCommon(callback) {
+ 	neededPackages = [];
+ 	
+-	// check for dpkg
+-	var dpkg = ZoteroLibreOfficeIntegration.getFile("/usr/bin/dpkg");
+-	if(!dpkg.exists()) {
+-		callback(true);
+-		return;
+-	}
+-	
+-	// check for bash
+-	var bash = ZoteroLibreOfficeIntegration.getFile("/bin/bash");
+-	if(!bash.exists()) {
+-		callback(true);
+-		return;
+-	}
+-	
+-	// check for java
+-	var java = ZoteroLibreOfficeIntegration.getFile("/usr/bin/java");
+-	var success1 = java.exists();
+-	if(!success1) neededPackages.push("default-jre");
+-	
+-	// init processes
+-	bashProc = Components.classes["@mozilla.org/process/util;1"].
+-			createInstance(Components.interfaces.nsIProcess);
+-	bashProc.init(bash);
+-	
+-	checkJavaCommonPkg("openoffice.org-writer", "openoffice.org-java-common", function(success2) {
+-		checkJavaCommonPkg("libreoffice-writer", "libreoffice-java-common", function(success3) {
+-			callback(success1 && success2 && success3);
+-		});
+-	});
+-}
+-
+-function checkJavaCommonPkg(pkgMain, pkgRequired, callback) {
+-	// check for openoffice.org-writer with openoffice.org-java-common available but not installed
+-	bashProc.runAsync(["-c", "dpkg -l '"+pkgMain.replace(".", "\\.")+"' | grep '^ii '"], 2, {"observe":function(subject1, topic1) {
+-		if(topic1 === "process-finished" && !bashProc.exitValue) {
+-			Zotero.debug("ZoteroLibreOfficeIntegration: "+pkgMain+" is installed");
+-			// only care if openoffice.org-writer is installed; otherwise, we are probably not using
+-			// default packages and probably have Java
+-			bashProc.runAsync(
+-					["-c", "[ `apt-cache search '"+pkgRequired.replace(".", "\\.")+"' | wc -l` != 0 ]"], 2,
+-					{"observe":function(subject2, topic2) {
+-				// only care if openoffice.org-java-common is available for install; otherwise, we
+-				// are probably using packages that include Java
+-				if(topic2 === "process-finished" && !bashProc.exitValue) {
+-					Zotero.debug("ZoteroLibreOfficeIntegration: "+pkgRequired+" is available");
+-					bashProc.runAsync(["-c", "dpkg -l | grep '"+pkgRequired.replace(".", "\\.")+"'"], 2,
+-							{"observe":function(subject3, topic3) {
+-						wizard.canAdvance = true;
+-						if(topic3 === "process-failed" || bashProc.exitValue) {
+-							Zotero.debug("ZoteroLibreOfficeIntegration: "+pkgRequired+" is not installed");
+-							neededPackages.push(pkgRequired);
+-							callback(false);
+-						} else {
+-							Zotero.debug("ZoteroLibreOfficeIntegration: "+pkgRequired+" is installed");
+-							callback(true);
+-						}
+-					}});
+-				} else {
+-					Zotero.debug("ZoteroLibreOfficeIntegration: "+pkgRequired+" is unavailable");
+-					callback(true);
+-				}
+-			}});
+-		} else {
+-			Zotero.debug("ZoteroLibreOfficeIntegration: "+pkgMain+" is not installed");
+-			callback(true);
+-		}
+-	}});
++	// Termux packages the Java runtime separately from its X11/AWT library.
++	if (!ZoteroLibreOfficeIntegration.getFile("@TERMUX_PREFIX@/lib/jvm/java-21-openjdk/bin/java").exists()) {
++		neededPackages.push("openjdk-21");
++	}
++	if (!ZoteroLibreOfficeIntegration.getFile("@TERMUX_PREFIX@/lib/jvm/java-21-openjdk/lib/libawt_xawt.so").exists()) {
++		neededPackages.push("openjdk-21-x");
++	}
++	callback(neededPackages.length === 0);
+ }
+ 
+ async function checkMacJDK() {
+@@ -260,33 +201,15 @@
+ 	var proc = Components.classes["@mozilla.org/process/util;1"].
+ 			createInstance(Components.interfaces.nsIProcess);
+ 	
+-	// first try to install via apturl
+-	var apturl = ZoteroLibreOfficeIntegration.getFile("/usr/bin/apturl");
+-	if(apturl.exists()) {
+-		proc.init(apturl);
+-		proc.runAsync(["apt:"+neededPackages.join(",")], 1, {"observe":function(subject, topic) {
+-			checkJavaCommon(javaCommonVerifyInstallationCallback);
+-			wizard.canAdvance = true;
+-			wizard.canRewind = true;
+-		}});
+-	} else {
+-		// if no apturl, try to install via xterm
+-		var xterm = ZoteroLibreOfficeIntegration.getFile("/usr/bin/xterm");
+-		if(xterm.exists()) {
+-			proc.init(xterm);
+-			proc.runAsync(["-e", "sudo apt-get install "+neededPackages.join(" ")+"; sleep 2;"], 2,
+-					{"observe":function(subject, topic) {
+-				checkJavaCommon(javaCommonVerifyInstallationCallback);
+-				wizard.canAdvance = true;
+-				wizard.canRewind = true;
+-			}});
+-		} else {
+-			document.getElementById("java-common-install-progress").hidden = true;
+-			document.getElementById("java-common-install-error").hidden = false;
+-			wizard.canAdvance = true;
+-			wizard.canRewind = true;
+-		}
+-	}
++	// The wizard's Next button authorizes installing the listed prerequisites.
++	// Termux apt runs as the application user, without sudo or a desktop helper.
++	proc.init(ZoteroLibreOfficeIntegration.getFile("@TERMUX_PREFIX@/bin/apt-get"));
++	let args = ["install", "-y", "--no-install-recommends", ...neededPackages];
++	proc.runAsync(args, args.length, { observe() {
++		wizard.canAdvance = true;
++		wizard.canRewind = true;
++		checkJavaCommon(javaCommonVerifyInstallationCallback);
++	}});
+ }
+ 
+ function javaCommonVerifyInstallationCallback(success) {
