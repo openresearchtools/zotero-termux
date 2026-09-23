@@ -47,7 +47,7 @@ port through the package manager. Gecko uses Termux's GTK/X11 port configuration
 On an x86_64 Linux host with Docker:
 
 ```sh
-git clone https://github.com/openresearchtools/zotero-termux
+git clone --branch termux https://github.com/openresearchtools/zotero-termux
 cd zotero-termux/termux
 ./scripts/prepare-builder.sh
 cp scripts/ci-build.sh termux-packages/zotero-ci-build.sh
@@ -66,29 +66,41 @@ To use an existing official framework checkout, copy `packages/zotero*` to its
 `x11-packages/` directory, then build `zotero-gecko` followed by `zotero`.
 The framework revision tested here and all upstream versions are in `upstream.lock`.
 
-## Track upstream without replacing the Termux port
+## Stable branch and upstream tracking
 
-The root source files, submodule definitions, `COPYING`, and upstream README are
-kept as supplied by Zotero. Downstream additions live in `termux/`, the standard
-AGPLv3 `LICENSE`, and `.github/workflows/termux-build.yml`. The upstream CI file
-is retained unchanged but disabled in this fork’s Actions settings; only the
-Termux workflow builds packages here.
+This is a real fork of `zotero/zotero` with two separate branch roles:
 
-Merge upstream instead of resetting or force-syncing the fork:
+* `main` tracks upstream development and contains no Termux additions.
+* **`termux` is the default branch**, based on the released Zotero 10.0.3 tag.
+  It contains the stock release source plus this directory, the AGPLv3
+  `LICENSE`, and `.github/workflows/termux-build.yml`.
+
+The root source files, submodule definitions, `COPYING`, and upstream README
+remain unchanged from the pinned release. CI fetches that release tag from
+`zotero/zotero`, checks its exact commit, and rejects any source differences
+outside the downstream additions. The package recipe builds the same pinned
+release tag from this fork and applies the Termux patches during packaging.
+
+To track upstream development separately:
 
 ```sh
 git remote add upstream https://github.com/zotero/zotero.git # once
 git fetch upstream --tags
-git merge upstream/main
+git switch main
+git merge --ff-only upstream/main
+git switch termux
 ```
 
-A normal merge preserves the downstream additions. Review any conflicts if
-upstream later introduces the same paths. Merging upstream `main` does not
-silently change the package version: update `termux/upstream.lock`, the recipe’s
-release tag and commit check, and the matching Gecko version together, then
-validate the port. The current package targets Zotero 10.0.3.
+**Do not merge development `main` into `termux`.** To upgrade the port, merge a
+released Zotero tag into `termux`, update `termux/upstream.lock`, the recipe’s
+version and exact commit check, and the matching Gecko version together. Review
+patches, build the aarch64 package, and validate the UI and local API before
+publishing a release. A normal merge retains the separate downstream files;
+review conflicts if upstream ever introduces the same paths.
 
-The initial packaging repository and its build logs are preserved at
+Upstream `.github/workflows/ci.yml` is retained unchanged but disabled in this
+fork’s Actions settings. Only the Termux workflow builds packages here.
+The initial packaging repository and its build logs are archived at
 https://github.com/openresearchtools/zotero-termux-build-history.
 
 ## Prefixes and app names
