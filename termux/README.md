@@ -222,11 +222,13 @@ therefore applies to other Android apps that can reach the port too.
 
 Native Termux LibreOffice 26.8.0.3 and OpenJDK 21.0.12 were tested with Zotero's
 unchanged bundled LibreOffice Integration 9.0.2. From package revision 2,
-installation uses Zotero's normal settings UI. Install the dependencies:
+installation uses Zotero's normal settings UI. Termux apt automatically installs
+Zotero's required `openjdk-21` and `openjdk-21-x` dependencies. Install LibreOffice
+if it is not already present:
 
 ```sh
 pkg update
-apt install --no-install-recommends libreoffice openjdk-21 openjdk-21-x
+apt install --no-install-recommends libreoffice
 ```
 
 Save documents and close LibreOffice. In Zotero, open **Settings → Cite → Word

@@ -10,10 +10,10 @@ TERMUX_PKG_GIT_BRANCH="$TERMUX_PKG_VERSION"
 TERMUX_PKG_EXCLUDED_ARCHES="arm, i686, x86_64"
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_AUTO_UPDATE=false
-TERMUX_PKG_DEPENDS="bash, coreutils, ffmpeg, fontconfig, freetype, gdk-pixbuf, glib, gtk3, libandroid-shmem, libandroid-spawn, libc++, libcairo, libevent, libffi, libice, libjpeg-turbo, libnspr, libnss, libpixman, libsm, libvpx, libwebp, libx11, libxcb, libxcomposite, libxdamage, libxext, libxfixes, libxrandr, libxtst, openssl, pango, procps, pulseaudio, zlib"
+TERMUX_PKG_DEPENDS="bash, coreutils, ffmpeg, fontconfig, freetype, gdk-pixbuf, glib, gtk3, libandroid-shmem, libandroid-spawn, libc++, libcairo, libevent, libffi, libice, libjpeg-turbo, libnspr, libnss, libpixman, libsm, libvpx, libwebp, libx11, libxcb, libxcomposite, libxdamage, libxext, libxfixes, libxrandr, libxtst, openjdk-21, openjdk-21-x, openssl, pango, procps, pulseaudio, zlib"
 TERMUX_PKG_BUILD_DEPENDS="zotero-gecko"
 TERMUX_PKG_RECOMMENDS="ttf-dejavu, termux-x11-nightly"
-TERMUX_PKG_SUGGESTS="libreoffice, openjdk-21, openjdk-21-x"
+TERMUX_PKG_SUGGESTS="libreoffice"
 
 termux_step_post_get_source() {
 	# The tag is convenient for Termux's git downloader, but a moved tag must fail.

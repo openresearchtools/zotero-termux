@@ -60,6 +60,9 @@ packages = sorted(directory.glob('zotero_*.deb'))
 assert len(packages) == 1, f'Expected one Zotero package, found {packages}'
 for package in packages:
     assert output('dpkg-deb', '-f', str(package), 'Architecture').strip() == 'aarch64'
+    dependencies = output('dpkg-deb', '-f', str(package), 'Depends')
+    for dependency in ('openjdk-21', 'openjdk-21-x'):
+        assert re.search(r'(?:^|,\s*)' + re.escape(dependency) + r'(?:\s|,|$)', dependencies), dependencies
     with tempfile.TemporaryDirectory() as tmp:
         subprocess.run(['dpkg-deb', '-x', str(package), tmp], check=True)
         root = pathlib.Path(tmp)

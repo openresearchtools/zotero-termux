@@ -20,8 +20,10 @@ packaged installer workaround as Zotero Settings → Cite → Word Processors �
 Install/Reinstall LibreOffice Add-in. No compiler or repository checkout is
 needed on the device. LibreOffice and the bundled official OXT remain unchanged.
 
-Install missing native Termux packages when setup is requested:
-`pkg install libreoffice openjdk-21 openjdk-21-x`. Use the configured Termux
+Zotero declares `openjdk-21` and `openjdk-21-x` as apt dependencies, so a normal
+Zotero installation already supplies Java. Install `libreoffice` when setup is
+requested and it is missing. If the tool reports missing Java after a partial or
+manual installation, repair it with `pkg install openjdk-21 openjdk-21-x`. Use the configured Termux
 prefix; desktop Debian/glibc packages do not work here. The tool does not install
 these packages itself. Save documents and close LibreOffice before `install`;
 do not kill Writer or discard unsaved work. A failed call is not success; inspect
