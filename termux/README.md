@@ -24,10 +24,11 @@ finished application. Installing `zotero` includes its native Bionic runtime;
 users do not need to install `zotero-gecko` separately. The preserved Gecko
 artifact is for reusing that build input during later application builds.
 
-The requested behavior change is one preference:
+The Termux build enables two preferences:
 
 ```js
 pref("extensions.zotero.httpServer.localAPI.enabled", true);
+pref("extensions.zotero.httpServer.localAPI.autoAuthorize", true);
 ```
 
 This enables Settings → Advanced → “Allow other applications on this computer
@@ -37,10 +38,18 @@ API behavior are retained. It does not expose arbitrary remote JavaScript
 execution. Bashkitten agents in Termux can use the ordinary local API at
 `http://127.0.0.1:23119/api/` while Zotero is running.
 
-Zotero 10 keeps its normal authorization for writes: an application calls
-`POST /api/local/authorize` with its `appName`, the user allows it in Zotero,
-and the application uses the returned local key and `Zotero-Server-ID` header.
-Enabling the checkbox does not bypass this upstream authorization dialog.
+Any application that can reach the localhost API can obtain a remembered write
+key **without an approval dialog**. There is no distinction between agents and
+other localhost callers. A client calls `POST /api/local/authorize` with its
+`appName` and `Zotero-Server-ID`, then uses the returned `Zotero-API-Key` and
+server ID for writes. Cache the key: the upstream limit of five authorization
+requests per minute is retained. Writes without a key remain rejected.
+
+Set `extensions.zotero.httpServer.localAPI.autoAuthorize` to `false` in Settings
+→ Advanced → Config Editor to restore the upstream approval dialog for new
+authorizations. Existing remembered keys remain valid until revoked using
+Zotero's authorization controls. Disabling the local API checkbox disables
+local API access altogether.
 
 Other patches are platform adaptations: Bionic library names, Termux paths, the
 launcher, and supplying a source-built runtime to Zotero's build. Package policy
@@ -147,7 +156,7 @@ Once a validated package is available, in aarch64 Termux:
 ```sh
 pkg install x11-repo
 pkg update
-apt install ./zotero_10.0.3_aarch64.deb
+apt install ./zotero_10.0.3-1_aarch64.deb
 ```
 
 Start a Termux:X11 session (the Android Termux:X11 APK is also required):
@@ -165,12 +174,14 @@ curl -f -H 'Zotero-API-Version: 3' \
   http://127.0.0.1:23119/api/users/0/items
 ```
 
-`python termux/scripts/smoke-local-api.py` (from the repository root) checks real library reads and verifies that
-unauthorized writes remain rejected. `--expect-disabled` checks the user's
-ability to disable the API through the existing preference.
+`python termux/scripts/smoke-local-api.py --expect-auto-authorize` (from the
+repository root) checks library reads, automatic authorization, two empty
+writes with the same key, and rejection of writes without a key. It creates one
+remembered API key and leaves library items unchanged. `--expect-disabled`
+checks the user's ability to disable the API through the existing preference.
 
-Android applications share the device's loopback network. The default enables
-the same local-app access as Zotero's own settings checkbox.
+Android applications share the device's loopback network. Automatic authorization
+therefore applies to other Android apps that can reach the port too.
 
 ## Upstream and licensing
 

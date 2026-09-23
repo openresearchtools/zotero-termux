@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Check a running Zotero's real API and retained write authorization boundary."""
+"""Check a running Zotero's API, optionally including unattended authorization."""
 import argparse
 import json
 import urllib.error
@@ -7,7 +7,10 @@ import urllib.request
 
 parser = argparse.ArgumentParser(description=__doc__)
 parser.add_argument('--base', default='http://127.0.0.1:23119')
-parser.add_argument('--expect-disabled', action='store_true')
+mode = parser.add_mutually_exclusive_group()
+mode.add_argument('--expect-disabled', action='store_true')
+mode.add_argument('--expect-auto-authorize', action='store_true',
+                  help='Request one remembered API key and test two empty writes')
 args = parser.parse_args()
 
 
@@ -43,3 +46,20 @@ else:
     })
     assert status == 401, (status, body)
     print('Local API v3: reads work; unauthenticated writes correctly return 401')
+    if args.expect_auto_authorize:
+        status, _, body = request('/api/local/authorize',
+            json.dumps({'appName': 'Termux API smoke test'}).encode(), {
+                'Content-Type': 'application/json', 'Zotero-Server-ID': server_id
+            })
+        assert status == 200, (status, body)
+        permission = json.loads(body)
+        assert permission['remember'] is True
+        assert permission['key']
+        for _ in range(2):
+            status, _, body = request('/api/users/0/items', b'[]', {
+                'Content-Type': 'application/json', 'Zotero-Server-ID': server_id,
+                'Zotero-API-Key': permission['key']
+            })
+            assert status == 200, (status, body)
+            assert not json.loads(body)['failed']
+        print('Automatic authorization and reusable key work without a dialog; no items changed')

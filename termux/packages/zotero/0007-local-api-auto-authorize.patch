@@ -1,0 +1,23 @@
+--- a/defaults/preferences/zotero.js
++++ b/defaults/preferences/zotero.js
+@@ -163,4 +163,5 @@
+ pref("extensions.zotero.httpServer.localAPI.enabled", true);
++pref("extensions.zotero.httpServer.localAPI.autoAuthorize", true);
+ 
+ // Zeroconf
+ pref("extensions.zotero.zeroconf.server.enabled", false);
+--- a/chrome/content/zotero/xpcom/server/server_localAPI.js
++++ b/chrome/content/zotero/xpcom/server/server_localAPI.js
+@@ -1659,6 +1659,12 @@
+  * @returns {Promise<{ allow: boolean, remember: boolean }>}
+  */
+ Zotero.Server.LocalAPI._promptForAuthorization = async function (appName) {
++	// Termux supports unattended clients. This applies to every localhost caller,
++	// not a particular application identity. False restores the upstream dialog.
++	if (Zotero.Prefs.get('httpServer.localAPI.autoAuthorize')) {
++		return { allow: true, remember: true };
++	}
++
+ 	let title = Zotero.ftl.formatValueSync('local-api-authorize-title');
+ 	let text = Zotero.ftl.formatValueSync('local-api-authorize-text', { appName });
+ 	let allowLabel = Zotero.ftl.formatValueSync('general-allow');

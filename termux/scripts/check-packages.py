@@ -32,7 +32,11 @@ for package in packages:
         with zipfile.ZipFile(app / 'app/omni.ja') as jar:
             prefs = jar.read('defaults/preferences/zotero.js').decode()
             assert 'pref("extensions.zotero.httpServer.localAPI.enabled", true);' in prefs
+            assert 'pref("extensions.zotero.httpServer.localAPI.autoAuthorize", true);' in prefs
             assert 'pref("extensions.zotero.httpServer.enabled", true);' in prefs
+            local_api = jar.read('chrome/content/zotero/xpcom/server/server_localAPI.js').decode()
+            assert "if (Zotero.Prefs.get('httpServer.localAPI.autoAuthorize'))" in local_api
+            assert 'return { allow: true, remember: true };' in local_api
             assert any('zoteroPane.xhtml' in x for x in jar.namelist())
         policy = json.loads((app / 'distribution/policies.json').read_text())
         assert policy['policies']['DisableAppUpdate'] is True
@@ -52,4 +56,4 @@ for package in packages:
             assert not re.search(r'lib(?:c|m|pthread|dl|rt)\.so\.[0-9]|ld-linux', dynamic), file
             checked += 1
         assert checked >= 2
-        print(f'{package.name}: {checked} AArch64 Bionic ELF files; upstream UI, license, API default verified')
+        print(f'{package.name}: {checked} AArch64 Bionic ELF files; upstream UI, license, API defaults verified')
