@@ -66,6 +66,31 @@ To use an existing official framework checkout, copy `packages/zotero*` to its
 `x11-packages/` directory, then build `zotero-gecko` followed by `zotero`.
 The framework revision tested here and all upstream versions are in `upstream.lock`.
 
+## Reusing long Gecko builds
+
+Like Bashkitten’s Mozilla builds, CI enables Mozilla `sccache` with its GitHub
+Actions backend for both C/C++ and Rust. Compiler results are stored as they
+finish, so a later failure does not discard the successful compilations. The
+builder uses stable paths, forwards the cache environment into its container,
+and prints compiler-cache statistics on success or failure. Host Python is also
+saved after failed Gecko builds once its installation is complete.
+
+The finished runtime has a separate cache and **`zotero-gecko-aarch64` artifact**.
+Its manifest fingerprints the Gecko recipe, patches, configuration, Termux
+framework, and builder image independently of Zotero application changes. The
+manifest, package metadata, and SHA-256 checksums are verified before reuse.
+The artifact is uploaded before Zotero assembly, retained for 90 days, and can
+be reused after a later app build fails or the Actions cache is evicted:
+
+```sh
+gh workflow run termux-build.yml --ref main -f gecko_run=RUN_ID
+```
+
+Select a run containing the standalone artifact; reuse fails if the current
+Gecko inputs differ. Normal runs restore the matching completed component
+automatically and skip Gecko compilation. A validated release also retains its
+Gecko package and checksums as release assets.
+
 ## One stable branch and recorded upgrades
 
 **`main` is the only branch in this fork.** Its starting point is the official

@@ -4,19 +4,32 @@ on:
     branches: [main]
     paths: ['termux/**', '.github/workflows/termux-build.yml']
   workflow_dispatch:
+    inputs:
+      gecko_run:
+        description: 'Reuse zotero-gecko-aarch64 from this run ID (must match current Gecko inputs)'
+        required: false
+        type: string
   pull_request:
     branches: [main]
     paths: ['termux/**', '.github/workflows/termux-build.yml']
 permissions:
   contents: read
+  actions: read
 concurrency:
   group: build-${{ github.ref }}
   cancel-in-progress: false
 jobs:
   build:
-    # This is the standard Termux cross-build host; the sole target is aarch64.
+    # Standard Termux cross-build host; the sole package target is aarch64.
     runs-on: ubuntu-24.04
     timeout-minutes: 360
+    env:
+      SCCACHE_GHA_ENABLED: 'true'
+      SCCACHE_GHA_VERSION: zotero-termux-aarch64-v1
+      SCCACHE_BASEDIRS: /home/builder/.termux-build/zotero-gecko:/home/builder/termux-packages
+      SCCACHE_IDLE_TIMEOUT: '0'
+      SCCACHE_VERBOSE_STATS: '1'
+      ZOTERO_SCCACHE: /home/builder/termux-packages/build-tools/sccache/sccache
     defaults:
       run:
         working-directory: termux
@@ -35,9 +48,8 @@ jobs:
           cp scripts/ci-build.sh termux-packages/zotero-ci-build.sh
           source upstream.lock
           echo "TERMUX_BUILDER_IMAGE_NAME=$TERMUX_BUILDER_IMAGE_NAME" >> "$GITHUB_ENV"
-          # The official builder protects its recipe checkout from writes.
-          # Mount the build directory, as supported by run-docker.sh -m, so
-          # Docker does not create root-owned parents for a nested cache mount.
+          # Mount the build directory like run-docker.sh -m. A nested cache mount
+          # alone would cause Docker to create root-owned parent directories.
           mkdir -p termux-packages/build-tools/termux-build
           echo "TERMUX_DOCKER_RUN_EXTRA_ARGS=--volume $PWD/termux-packages/build-tools/termux-build:/home/builder/.termux-build" >> "$GITHUB_ENV"
       - name: Lint with the official Termux linter
@@ -47,36 +59,89 @@ jobs:
         run: |
           sudo rm -rf /usr/local/lib/android /usr/share/dotnet /opt/ghc /usr/local/.ghcup
           df -h /
-      - name: Restore compiled Gecko package
+      - name: Fingerprint Gecko independently of the Zotero application
+        id: component
+        run: echo "digest=$(python3 scripts/gecko-component.py fingerprint)" >> "$GITHUB_OUTPUT"
+      - name: Restore completed Gecko component
         id: gecko-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: termux/termux-packages/output/zotero-gecko_*.deb
-          key: gecko-aarch64-${{ hashFiles('termux/upstream.lock', 'termux/packages/zotero-gecko/**') }}
+          path: termux/termux-packages/output/gecko-component
+          key: gecko-component-v1-${{ steps.component.outputs.digest }}
+      - name: Download a preserved Gecko artifact when requested
+        if: steps.gecko-cache.outputs.cache-hit != 'true' && inputs.gecko_run != ''
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GECKO_RUN: ${{ inputs.gecko_run }}
+        run: |
+          [[ "$GECKO_RUN" =~ ^[0-9]+$ ]]
+          gh run download "$GECKO_RUN" --repo "$GITHUB_REPOSITORY" \
+            --name zotero-gecko-aarch64 --dir termux-packages/output/gecko-component
+      - name: Select verified component reuse or source compilation
+        id: runtime
+        run: |
+          if [[ -f termux-packages/output/gecko-component/manifest.json ]]; then
+            python3 scripts/gecko-component.py verify termux-packages/output/gecko-component
+            cp termux-packages/output/gecko-component/*.deb termux-packages/output/
+            echo 'build=false' >> "$GITHUB_OUTPUT"
+          else
+            echo 'build=true' >> "$GITHUB_OUTPUT"
+          fi
       - name: Restore ESR host Python
+        if: steps.runtime.outputs.build == 'true'
         id: python-cache
         uses: actions/cache/restore@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: termux/termux-packages/build-tools/termux-build/_cache/zotero-python-3.12.12
           key: python-3.12.12-builder-a753715a-v2
-      - name: Build aarch64 Bionic Gecko
-        if: steps.gecko-cache.outputs.cache-hit != 'true'
+      - name: Install Mozilla compiler cache with persistent GHA backend
+        if: steps.runtime.outputs.build == 'true'
+        uses: mozilla-actions/sccache-action@fc920bf0ec8de6ee65d409111f7ec508035751ba
+        with:
+          version: v0.17.0
+          disable_annotations: true
+      - name: Expose compiler cache inside the official builder
+        if: steps.runtime.outputs.build == 'true'
+        run: |
+          install -Dm755 "$SCCACHE_PATH" termux-packages/build-tools/sccache/sccache
+          # Forward credentials by variable name; never put their values in logs.
+          echo 'TERMUX_DOCKER_EXEC_EXTRA_ARGS=--env SCCACHE_GHA_ENABLED --env SCCACHE_GHA_VERSION --env SCCACHE_BASEDIRS --env SCCACHE_IDLE_TIMEOUT --env SCCACHE_VERBOSE_STATS --env ACTIONS_CACHE_SERVICE_V2 --env ACTIONS_RESULTS_URL --env ACTIONS_RUNTIME_TOKEN --env ZOTERO_SCCACHE' >> "$GITHUB_ENV"
+      - name: Build aarch64 Bionic Gecko with persistent compiler caching
+        id: gecko-build
+        if: steps.runtime.outputs.build == 'true'
         working-directory: termux/termux-packages
         run: |
           set -o pipefail
           ./scripts/run-docker.sh bash ./zotero-ci-build.sh gecko 2>&1 | tee ../gecko-build.log
-      - name: Save ESR host Python
-        if: always() && steps.python-cache.outputs.cache-hit != 'true' && hashFiles('termux/termux-packages/build-tools/termux-build/_cache/zotero-python-3.12.12/.complete') != ''
+      - name: Save ESR host Python even after a failed Gecko build
+        if: always() && steps.runtime.outputs.build == 'true' && steps.python-cache.outputs.cache-hit != 'true' && hashFiles('termux/termux-packages/build-tools/termux-build/_cache/zotero-python-3.12.12/.complete') != ''
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
           path: termux/termux-packages/build-tools/termux-build/_cache/zotero-python-3.12.12
           key: ${{ steps.python-cache.outputs.cache-primary-key }}
-      - name: Save compiled Gecko package
-        if: steps.gecko-cache.outputs.cache-hit != 'true'
+      - name: Record standalone Gecko package and checksums
+        id: record-runtime
+        if: always() && steps.gecko-build.outcome == 'success'
+        run: python3 scripts/gecko-component.py record termux-packages/output
+      - name: Verify completed Gecko component integrity
+        id: verify-runtime
+        if: always() && (steps.record-runtime.outcome == 'success' || steps.runtime.outputs.build == 'false')
+        run: python3 scripts/gecko-component.py verify termux-packages/output/gecko-component
+      - name: Cache completed Gecko component
+        if: always() && steps.verify-runtime.outcome == 'success' && steps.gecko-cache.outputs.cache-hit != 'true'
         uses: actions/cache/save@0057852bfaa89a56745cba8c7296529d2fc39830 # v4
         with:
-          path: termux/termux-packages/output/zotero-gecko_*.deb
+          path: termux/termux-packages/output/gecko-component
           key: ${{ steps.gecko-cache.outputs.cache-primary-key }}
+      - name: Preserve standalone Gecko artifact before building Zotero
+        if: always() && steps.verify-runtime.outcome == 'success'
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: zotero-gecko-aarch64
+          path: termux/termux-packages/output/gecko-component/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
       - name: Build Zotero with upstream build system
         working-directory: termux/termux-packages
         run: |

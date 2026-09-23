@@ -4,6 +4,19 @@ set -euo pipefail
 export GIT_LFS_SKIP_SMUDGE=1
 export TERMUX_PKG_MAKE_PROCESSES=2
 phase=${1:-all}
+# The GHA backend stores compiler outputs as they finish, including when a
+# later compiler invocation fails. Keep its server inside the builder container.
+if [[ "${1:-all}" != zotero && -n "${ZOTERO_SCCACHE:-}" ]]; then
+    test -x "$ZOTERO_SCCACHE"
+    "$ZOTERO_SCCACHE" --start-server
+    finish_cache() {
+        local result=$?
+        "$ZOTERO_SCCACHE" --show-stats || true
+        "$ZOTERO_SCCACHE" --stop-server || true
+        exit "$result"
+    }
+    trap finish_cache EXIT
+fi
 case "$phase" in
     gecko|all) ./build-package.sh -I -a aarch64 zotero-gecko ;;
     zotero) ;;

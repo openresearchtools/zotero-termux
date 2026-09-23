@@ -20,6 +20,23 @@ termux_step_post_get_source() {
 }
 
 termux_step_pre_configure() {
+	# Patch 0029 changes a vendored crate file. Keep Cargo's integrity checking
+	# enabled and update only that file's checksum to the reviewed patched hash.
+	python3 - <<'PY'
+import hashlib
+import json
+from pathlib import Path
+crate = Path('third_party/rust/glslopt')
+name = 'glsl-optimizer/include/c11/threads_posix.h'
+original = 'f8ad2b69fa472e332b50572c1b2dcc1c8a0fa783a1199aad245398d3df421b4b'
+patched = '5fa592653213459e2cce70b430715246d53fd1a10c1866acf427874530a69f92'
+assert hashlib.sha256((crate / name).read_bytes()).hexdigest() == patched
+path = crate / '.cargo-checksum.json'
+checksums = json.loads(path.read_text())
+assert checksums['files'][name] in (original, patched)
+checksums['files'][name] = patched
+path.write_text(json.dumps(checksums))
+PY
 	# ESR 140's mach is incompatible with Python 3.14 on newer build hosts.
 	# Build its host interpreter in a clean environment, never with target flags.
 	local host_python="$TERMUX_COMMON_CACHEDIR/zotero-python-3.12.12"
@@ -84,6 +101,12 @@ termux_step_configure() {
 		-e "s|@TERMUX_PREFIX@|${TERMUX_PREFIX}|" \
 		-e "s|@CARGO_TARGET_NAME@|${CARGO_TARGET_NAME}|" \
 		$TERMUX_PKG_BUILDER_DIR/mozconfig.cfg > .mozconfig
+
+	if [ -n "${ZOTERO_SCCACHE:-}" ]; then
+		test -x "$ZOTERO_SCCACHE"
+		# Mozilla uses --with-ccache=sccache for both C/C++ and Rust.
+		printf 'ac_add_options --with-ccache=%s\n' "$ZOTERO_SCCACHE" >> .mozconfig
+	fi
 
 	if [ "$TERMUX_DEBUG_BUILD" = true ]; then
 		cat >>.mozconfig - <<END
