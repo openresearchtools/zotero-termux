@@ -1,0 +1,16 @@
+Termux uses desktop Linux build flags with Bionic. Preserve Chromium's Android
+choice of ordinary mutexes even though BUILDFLAG(IS_ANDROID) is false here.
+pthread_mutexattr_setprotocol is unavailable at Termux's Android API 24 baseline.
+
+--- a/third_party/zucchini/chromium/base/synchronization/lock_impl_posix.cc
++++ b/third_party/zucchini/chromium/base/synchronization/lock_impl_posix.cc
+@@ -59,7 +59,8 @@
+ // Lock::PriorityInheritanceAvailable still must be checked as the code may
+ // compile but the underlying platform still may not correctly support priority
+ // inheritance locks.
+-#if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA)
++#if BUILDFLAG(IS_NACL) || BUILDFLAG(IS_ANDROID) || BUILDFLAG(IS_FUCHSIA) || \
++    defined(__BIONIC__)
+ #define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 0
+ #else
+ #define PRIORITY_INHERITANCE_LOCKS_POSSIBLE() 1

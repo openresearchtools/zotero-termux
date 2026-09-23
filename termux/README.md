@@ -19,6 +19,11 @@ alone is not a claim that every desktop integration works on Android.
   perform application assembly. The recipe builds the pinned upstream release tag
   from this fork and applies the Termux patches during packaging.
 
+As in upstream Zotero, Gecko is a separate build input that is bundled into the
+finished application. Installing `zotero` includes its native Bionic runtime;
+users do not need to install `zotero-gecko` separately. The preserved Gecko
+artifact is for reusing that build input during later application builds.
+
 The requested behavior change is one preference:
 
 ```js

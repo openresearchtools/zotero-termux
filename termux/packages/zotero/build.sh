@@ -55,7 +55,9 @@ termux_step_make_install() {
 	mkdir -p "$dest/distribution"
 	printf '%s\n' '{"policies":{"DisableAppUpdate":true}}' > "$dest/distribution/policies.json"
 	ln -sfr "$dest/zotero" "$TERMUX_PREFIX/bin/zotero"
-	sed "s|@TERMUX_PREFIX@|$TERMUX_PREFIX|g" "$TERMUX_PKG_BUILDER_DIR/zotero.desktop" \
+	# Keep upstream's file associations and URL handling in the system launcher.
+	sed -e "s|^Exec=.*|Exec=$TERMUX_PREFIX/bin/zotero -url %U|" \
+		-e 's/^Icon=.*/Icon=zotero/' app/linux/zotero.desktop \
 		> "$TERMUX_PKG_TMPDIR/zotero.desktop"
 	install -Dm644 "$TERMUX_PKG_TMPDIR/zotero.desktop" "$TERMUX_PREFIX/share/applications/zotero.desktop"
 	for size in 32 64 128; do
