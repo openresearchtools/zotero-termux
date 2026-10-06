@@ -1,15 +1,17 @@
 # Zotero for native Termux
 
-Unofficial, aarch64-only packaging of Zotero 10.0.3 for Android's **Bionic libc**.
+Unofficial aarch64 and x86_64 packaging of Zotero 10.0.5 for Android's **Bionic libc**.
 This GitHub fork retains Zotero’s complete upstream source and history. The
 `termux/` directory contains normal Termux `build.sh` recipes and patches. It uses
 the official `termux/termux-packages` framework, Android NDK toolchain, dependency
 handling, prefix substitution, ELF cleanup, and Debian packaging.
 
-**Validated on aarch64 Android in native Termux with Termux:X11.** The library UI,
+**Zotero 10.0.3-2 was validated on aarch64 Android in native Termux with Termux:X11.** The library UI,
 PDF reader, import/export, bibliography generation, unattended local API writes,
 and LibreOffice citations have passed runtime checks. See [VALIDATION.md](VALIDATION.md) for build
 links, cache evidence, test scope, and remaining desktop integration limitations.
+The 10.0.5 upgrade and x86_64 packages are undergoing build validation; that
+earlier runtime evidence does not establish validation of the new packages.
 
 ## Packages
 
@@ -70,13 +72,15 @@ cp scripts/ci-build.sh termux-packages/zotero-ci-build.sh
 source upstream.lock
 export TERMUX_BUILDER_IMAGE_NAME
 cd termux-packages
-./scripts/run-docker.sh bash ./zotero-ci-build.sh
+./scripts/run-docker.sh bash ./zotero-ci-build.sh all aarch64
 ```
 
-Only `-a aarch64` is supported. Outputs are in `termux/termux-packages/output/` from the repository root.
+Use `all x86_64` for Intel/AMD Android instead. Outputs are in
+`termux/termux-packages/output/` from the repository root.
 GitHub Actions uses the same commands. Allow several hours and substantial disk
 space for the full Gecko build. The host architecture does not change the
-package ABI: executables are checked for AArch64 and `/system/bin/linker64`.
+package ABI: executables are checked for the requested CPU architecture,
+Android `/system/bin/linker64`, and absence of glibc dependencies.
 
 The check also scans nested application archives. The stock LibreOffice `.oxt`
 installer retains its exact upstream multi-platform JNA jar, including desktop
@@ -100,7 +104,15 @@ builder uses stable paths, forwards the cache environment into its container,
 and prints compiler-cache statistics on success or failure. Host Python is also
 saved after failed Gecko builds once its installation is complete.
 
-The finished runtime has a separate cache and **`zotero-gecko-aarch64` artifact**.
+The finished runtime has a separate cache and **`zotero-gecko-ARCH` artifact**.
+The source repository builds aarch64. x86_64 builds run in
+[`zotero-termux-build-x86_64`](https://github.com/openresearchtools/zotero-termux-build-x86_64),
+with their own GitHub compiler cache and directly downloadable Actions artifacts.
+The source workflow collects and verifies that exact source commit's x86_64
+package as soon as it arrives. Its `BUILD_REPOS_TOKEN` needs Actions read/write
+access to the builder; no Android signing key is used for these Termux packages.
+The architecture selector can build either target or both. The builder calls
+the same pinned native build workflow; it does not publish releases.
 Its manifest fingerprints the Gecko recipe, patches, configuration, Termux
 framework, and builder image independently of Zotero application changes. The
 manifest, package metadata, and SHA-256 checksums are verified before reuse.
@@ -146,7 +158,7 @@ and subsequent version history are in [UPSTREAM_HISTORY.md](UPSTREAM_HISTORY.md)
 The root source files, submodule definitions, `COPYING`, and upstream README
 remain unchanged from the recorded release. CI fetches that release tag from
 `zotero/zotero`, checks its exact commit, and rejects source differences outside
-`termux/`, the added AGPLv3 `LICENSE`, and our separately named workflow. The
+`termux/`, the added AGPLv3 `LICENSE`, and our two native-build workflows. The
 recipe builds the same release tag and applies the Termux patches during
 packaging.
 
@@ -165,8 +177,8 @@ fork to upstream: the stable release history and downstream additions grow
 together on our single branch.
 
 Upstream `.github/workflows/ci.yml` is retained unchanged but disabled in this
-fork’s Actions settings. Only `.github/workflows/termux-build.yml` builds
-packages here. The initial packaging repository and build logs are archived at
+fork’s Actions settings. `termux-build.yml` dispatches package builds using the shared `termux-native.yml`
+workflow. The initial packaging repository and build logs are archived at
 https://github.com/openresearchtools/zotero-termux-build-history.
 
 ## Prefixes and app names
@@ -183,12 +195,14 @@ For a custom app/prefix, use the framework's source dependency builds instead.
 
 Stable releases are indexed in the signed
 [Open Research Tools APT repository](https://github.com/openresearchtools/apt#native-termux-install-the-termux-keyring-package).
-Set up its native Termux keyring once. In aarch64 Termux:
+Set up its native Termux keyring once, selecting the installed Termux architecture:
 
 ```sh
 pkg install wget x11-repo
+architecture="$(dpkg --print-architecture)"
+case "$architecture" in aarch64|x86_64) ;; *) echo 'Unsupported architecture'; exit 1;; esac
 wget -O "$HOME/openresearchtools-termux-keyring.deb" \
-  https://github.com/openresearchtools/apt/releases/download/repo/openresearchtools-termux-keyring.deb
+  "https://github.com/openresearchtools/apt/releases/download/repo/openresearchtools-termux-keyring_${architecture}.deb"
 apt install "$HOME/openresearchtools-termux-keyring.deb"
 apt update
 apt install zotero

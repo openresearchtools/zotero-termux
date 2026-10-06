@@ -4,7 +4,7 @@ TERMUX_PKG_LICENSE="MPL-2.0"
 TERMUX_PKG_MAINTAINER="@openresearchtools"
 TERMUX_PKG_VERSION="140.15.0"
 TERMUX_PKG_REVISION=1
-TERMUX_PKG_EXCLUDED_ARCHES="arm, i686, x86_64"
+TERMUX_PKG_EXCLUDED_ARCHES="arm, i686"
 TERMUX_RUST_VERSION=1.86.0
 TERMUX_PKG_SRCURL=https://archive.mozilla.org/pub/firefox/releases/${TERMUX_PKG_VERSION}esr/source/firefox-${TERMUX_PKG_VERSION}esr.source.tar.xz
 TERMUX_PKG_SHA256=358bb03c550f95172f1e31694e4287da3411560df91e931cb25210efdf90e524
@@ -15,7 +15,12 @@ TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_AUTO_UPDATE=false
 
 termux_step_post_get_source() {
-	local f="media/ffvpx/config_unix_aarch64.h"
+	local f
+	case "$TERMUX_ARCH" in
+		aarch64) f="media/ffvpx/config_unix_aarch64.h" ;;
+		x86_64) f="media/ffvpx/config_unix64.h" ;;
+		*) termux_error_exit "Unsupported Gecko architecture: $TERMUX_ARCH" ;;
+	esac
 	echo "Applying sed substitution to ${f}"
 	sed -E '/^#define (CONFIG_LINUX_PERF|HAVE_SYSCTL) /s/1$/0/' -i ${f}
 }

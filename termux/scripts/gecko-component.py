@@ -2,6 +2,7 @@
 """Fingerprint, preserve, and verify the independently reusable native Gecko build."""
 import hashlib
 import json
+import os
 import pathlib
 import re
 import shutil
@@ -11,6 +12,9 @@ import tarfile
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 PREFIX = '/data/data/com.termux/files/usr'
+ARCHITECTURE = os.environ.get('TERMUX_ARCH', 'aarch64')
+if ARCHITECTURE not in ('aarch64', 'x86_64'):
+    raise SystemExit('Unsupported Gecko architecture')
 
 
 def sha256(path):
@@ -25,7 +29,7 @@ def fingerprint():
     inputs = {key: pins[key] for key in (
         'TERMUX_PACKAGES_COMMIT', 'TERMUX_BUILDER_IMAGE_NAME',
         'TERMUX_FIREFOX_PATCH_COMMIT', 'GECKO_VERSION')}
-    inputs.update(format=1, architecture='aarch64', prefix=PREFIX)
+    inputs.update(format=1, architecture=ARCHITECTURE, prefix=PREFIX)
     inputs['recipe_files'] = {
         str(path.relative_to(ROOT)): sha256(path)
         for path in sorted((ROOT / 'packages/zotero-gecko').rglob('*')) if path.is_file()
@@ -37,7 +41,7 @@ def metadata(package):
     def field(name):
         return subprocess.check_output(['dpkg-deb', '-f', str(package), name], text=True).strip()
     assert field('Package') == 'zotero-gecko', 'Not a Zotero Gecko package'
-    assert field('Architecture') == 'aarch64', 'Wrong component architecture'
+    assert field('Architecture') == ARCHITECTURE, 'Wrong component architecture'
     recipe = (ROOT / 'packages/zotero-gecko/build.sh').read_text()
     version = re.search(r'^TERMUX_PKG_VERSION="?([^"\n]+)', recipe, re.M).group(1)
     revision = re.search(r'^TERMUX_PKG_REVISION=(\d+)', recipe, re.M)
@@ -47,7 +51,7 @@ def metadata(package):
 
 
 def one_package(directory):
-    packages = list(directory.glob('zotero-gecko_*_aarch64.deb'))
+    packages = list(directory.glob(f'zotero-gecko_*_{ARCHITECTURE}.deb'))
     assert len(packages) == 1, f'Expected one Gecko package in {directory}'
     return packages[0]
 
@@ -60,7 +64,7 @@ def record(output):
     package = dest / source.name
     shutil.copy2(source, package)
     manifest = {
-        'format': 1, 'architecture': 'aarch64', 'prefix': PREFIX,
+        'format': 1, 'architecture': ARCHITECTURE, 'prefix': PREFIX,
         'input_sha256': fingerprint(), 'package': package.name,
         'package_version': version, 'package_sha256': sha256(package),
         'build_commit': subprocess.check_output(
@@ -78,7 +82,7 @@ def verify(directory):
     manifest_path = directory / 'manifest.json'
     manifest = json.loads(manifest_path.read_text())
     assert manifest['format'] == 1
-    assert manifest['architecture'] == 'aarch64' and manifest['prefix'] == PREFIX
+    assert manifest['architecture'] == ARCHITECTURE and manifest['prefix'] == PREFIX
     assert manifest['input_sha256'] == fingerprint(), 'Gecko build inputs have changed'
     assert manifest['package'] == package.name
     assert manifest['package_version'] == metadata(package)
@@ -102,7 +106,7 @@ def unpack(archive, directory):
     with tarfile.open(archive, 'r:gz') as stream:
         members = stream.getmembers()
         names = {member.name for member in members}
-        packages = {name for name in names if re.fullmatch(r'zotero-gecko_[0-9][0-9A-Za-z.+~:-]*_aarch64\.deb', name)}
+        packages = {name for name in names if re.fullmatch(rf'zotero-gecko_[0-9][0-9A-Za-z.+~:-]*_{ARCHITECTURE}\.deb', name)}
         assert len(packages) == 1 and names == packages | {'manifest.json', 'SHA256SUMS'}, 'Unexpected component archive contents'
         assert len(members) == 3 and all(member.isfile() for member in members), 'Only three regular files are allowed'
         # Copy known basenames ourselves: do not apply tar paths, links, owners,

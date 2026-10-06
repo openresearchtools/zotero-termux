@@ -6,7 +6,7 @@
  		archived_file="firefox-$GECKO_VERSION-$arch.tar.xz"
 -		if [ -e "$archived_file" ]; then
 +		if [ -n "${ZOTERO_TERMUX_RUNTIME_ARCHIVE:-}" ]; then
-+			test "$arch" = arm64
++			[[ "$arch" == arm64 || "$arch" == x86_64 ]]
 +			cp "$ZOTERO_TERMUX_RUNTIME_ARCHIVE" "firefox-$GECKO_VERSION.tar.xz"
 +		elif [ -e "$archived_file" ]; then
  			echo "Using $archived_file"

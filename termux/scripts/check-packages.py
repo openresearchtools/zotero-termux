@@ -3,6 +3,7 @@
 import hashlib
 import io
 import json
+import os
 import pathlib
 import re
 import subprocess
@@ -11,13 +12,19 @@ import tempfile
 import zipfile
 
 
+ARCHITECTURE = os.environ.get('TERMUX_ARCH', 'aarch64')
+MACHINE = {'aarch64': 'AArch64', 'x86_64': 'Advanced Micro Devices X86-64'}[ARCHITECTURE]
+PINS = dict(line.split('=', 1) for line in
+            (pathlib.Path(__file__).resolve().parents[1] / 'upstream.lock').read_text().splitlines()
+            if line and not line.startswith('#'))
+
 def output(*args):
     return subprocess.check_output(args, text=True)
 
 
 def check_elf(file, name):
     header = output('readelf', '-h', str(file))
-    assert re.search(r'Machine:\s+AArch64', header), name
+    assert re.search(r'Machine:\s+' + re.escape(MACHINE), header), name
     program = output('readelf', '-l', str(file))
     if 'Requesting program interpreter:' in program:
         assert '/system/bin/linker64' in program, name
@@ -59,7 +66,7 @@ directory = pathlib.Path(sys.argv[1])
 packages = sorted(directory.glob('zotero_*.deb'))
 assert len(packages) == 1, f'Expected one Zotero package, found {packages}'
 for package in packages:
-    assert output('dpkg-deb', '-f', str(package), 'Architecture').strip() == 'aarch64'
+    assert output('dpkg-deb', '-f', str(package), 'Architecture').strip() == ARCHITECTURE
     dependencies = output('dpkg-deb', '-f', str(package), 'Depends')
     for dependency in ('openjdk-21', 'openjdk-21-x'):
         assert re.search(r'(?:^|,\s*)' + re.escape(dependency) + r'(?:\s|,|$)', dependencies), dependencies
@@ -71,7 +78,7 @@ for package in packages:
         app = apps[0].parent.parent
         prefix = app.parent.parent
         assert 'Name=Zotero' in apps[0].read_text()
-        assert 'Version=10.0.3' in apps[0].read_text()
+        assert 'Version=' + PINS['ZOTERO_VERSION'] in apps[0].read_text()
         assert (prefix / 'share/doc/zotero/COPYING').is_file()
         assert 'GNU AFFERO GENERAL PUBLIC LICENSE' in (prefix / 'share/doc/zotero/COPYING').read_text()
         with zipfile.ZipFile(app / 'app/omni.ja') as jar:
@@ -117,5 +124,5 @@ for package in packages:
             check_elf(file, file)
             checked += 1
         assert checked >= 2
-        print(f'{package.name}: {checked} AArch64 Bionic runtime ELF files; upstream UI, license, API defaults verified')
+        print(f'{package.name}: {checked} {ARCHITECTURE} Bionic runtime ELF files; upstream UI, license, API defaults verified')
         print('Archives checked; exact upstream multi-platform LibreOffice JNA installer resource preserved')
