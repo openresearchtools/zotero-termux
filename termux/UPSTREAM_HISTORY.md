@@ -18,12 +18,12 @@ Keep this starting-point record when updating the current version.
 | Recorded date | Zotero tag | Exact upstream commit | Gecko ESR | Native validation |
 | --- | --- | --- | --- | --- |
 | 2026-09-23 | 10.0.3 | `80bc5565e000c3f24c37e0020713a41ec9f42e09` | 140.15.0esr | [10.0.3-2: native UI, LibreOffice installer/citations, Pi helper, Java dependencies; original PDF and API validation](VALIDATION.md) |
-
-| 2026-10-06 | 10.0.5 | `ca61760225d25191d0c65acbfd0c4f12a172d263` | 140.15.0esr | ARM64 and x86_64 builds pending; previous runtime validation remains specific to 10.0.3-2. |
+| 2026-10-06 | 10.0.5 | `ca61760225d25191d0c65acbfd0c4f12a172d263` | 140.15.0esr | [10.0.5 testing prerelease: both native builds and package checks passed; runtime checks pending](VALIDATION.md#zotero-1005-testing-prerelease). |
 
 Append a row for each stable upstream upgrade, including major upgrades.
 Update `upstream.lock` and the package recipe pins in the same versioned commit.
-Publish a Termux release tag only after its build and runtime checks pass.
+Publish stable Termux releases only after their build and runtime checks pass.
+Testing prereleases must state which runtime checks remain unverified.
 
 ## Package revision 2
 

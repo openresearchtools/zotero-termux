@@ -268,3 +268,20 @@ Zotero's citation UI, and the document tests above ran without a preload.
 The workaround affects installation only. Revision 2 packages this library
 and uses it through Zotero's normal installer and the optional Pi helper,
 superseding the removed compile-on-device script. Gecko remains unchanged.
+
+
+## Zotero 10.0.5 testing prerelease
+
+Published on 2026-10-06 from packaging commit
+`90d536028f3d210d1ccf80ede5960b1c9b9bab9a`, preserving official Zotero tag
+10.0.5 at `ca61760225d25191d0c65acbfd0c4f12a172d263` and Gecko 140.15.0esr.
+
+- [ARM64 build](https://github.com/openresearchtools/zotero-termux/actions/runs/37457245944): successful; 14 AArch64 Bionic runtime ELF files checked.
+- [x86_64 build](https://github.com/openresearchtools/zotero-termux-build-x86_64/actions/runs/37457241911): successful; 13 x86_64 Bionic runtime ELF files checked.
+- Both package checks verified Android linker/ABI, absence of glibc runtime dependencies, nested archives, application version, upstream UI assets/licenses, API defaults and packaged LibreOffice integration.
+- Both independently reusable Gecko archives passed manifest, architecture, input-fingerprint and checksum verification.
+
+[Release assets and SHA256SUMS](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.5-r0)
+contain those exact validated build outputs. These are testing packages. Android
+UI, installation through nightly APT, and LibreOffice runtime checks for these
+new packages are not established by the older 10.0.3-2 evidence above.

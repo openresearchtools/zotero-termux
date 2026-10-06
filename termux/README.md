@@ -10,8 +10,9 @@ handling, prefix substitution, ELF cleanup, and Debian packaging.
 PDF reader, import/export, bibliography generation, unattended local API writes,
 and LibreOffice citations have passed runtime checks. See [VALIDATION.md](VALIDATION.md) for build
 links, cache evidence, test scope, and remaining desktop integration limitations.
-The 10.0.5 upgrade and x86_64 packages are undergoing build validation; that
-earlier runtime evidence does not establish validation of the new packages.
+The [10.0.5 testing prerelease](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.5-r0)
+has passed ARM64 and x86_64 build/package checks. The earlier runtime evidence
+does not establish Android UI validation of these new packages.
 
 ## Packages
 
