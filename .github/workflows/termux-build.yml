@@ -59,7 +59,7 @@ jobs:
           persist-credentials: false
       - name: Dispatch isolated x86_64 build and collect its packages
         env:
-          GH_TOKEN: ${{ secrets.BUILD_REPOS_TOKEN }}
+          GH_TOKEN: ${{ secrets.TERMUX }}
         run: python3 termux/scripts/remote-build.py "$RUNNER_TEMP/x86_64"
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
         with:

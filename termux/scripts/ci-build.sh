@@ -19,8 +19,10 @@ if [[ "${1:-all}" != zotero && -n "${ZOTERO_SCCACHE:-}" ]]; then
     }
     trap finish_cache EXIT
 fi
+# Use current official dependencies; the rolling Termux repositories do not
+# retain every dependency version recorded in the pinned build framework.
 case "$phase" in
-    gecko|all) ./build-package.sh -I -a "$architecture" zotero-gecko ;;
+    gecko|all) ./build-package.sh -I -w -a "$architecture" zotero-gecko ;;
     zotero) ;;
     *) echo "Expected gecko, zotero, or all" >&2; exit 2 ;;
 esac
@@ -39,5 +41,5 @@ if [[ "$phase" == zotero || "$phase" == all ]]; then
         mkdir -p /data/data/.built-packages
         dpkg-deb -f "${runtime[0]}" Version > /data/data/.built-packages/zotero-gecko
     fi
-    ./build-package.sh -I -a "$architecture" zotero
+    ./build-package.sh -I -w -a "$architecture" zotero
 fi

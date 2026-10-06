@@ -188,7 +188,7 @@ jobs:
         with:
           name: zotero-termux-${{ inputs.architecture }}-${{ inputs.source_sha }}
           path: |
-            termux/termux-packages/output/*.deb
+            termux/termux-packages/output/zotero_*.deb
             termux/termux-packages/output/build-source.json
             termux/*-build.log
             termux/upstream.lock

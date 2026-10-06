@@ -94,6 +94,8 @@ see the installation instructions below for a Termux registration workaround.
 To use an existing official framework checkout, copy `packages/zotero*` to its
 `x11-packages/` directory, then build `zotero-gecko` followed by `zotero`.
 The framework revision tested here and all upstream versions are in `upstream.lock`.
+CI uses the framework’s `-w` option to download current official dependencies,
+because Termux’s rolling repositories do not retain every older version.
 
 ## Reusing long Gecko builds
 
@@ -109,8 +111,9 @@ The source repository builds aarch64. x86_64 builds run in
 [`zotero-termux-build-x86_64`](https://github.com/openresearchtools/zotero-termux-build-x86_64),
 with their own GitHub compiler cache and directly downloadable Actions artifacts.
 The source workflow collects and verifies that exact source commit's x86_64
-package as soon as it arrives. Its `BUILD_REPOS_TOKEN` needs Actions read/write
-access to the builder; no Android signing key is used for these Termux packages.
+package as soon as it arrives. Store a fine-grained token as the source repository secret `TERMUX`, with
+access only to `zotero-termux-build-x86_64`: Actions read/write, Contents read,
+and Metadata read. No Android signing key is used for these Termux packages.
 The architecture selector can build either target or both. The builder calls
 the same pinned native build workflow; it does not publish releases.
 Its manifest fingerprints the Gecko recipe, patches, configuration, Termux
