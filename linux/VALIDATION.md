@@ -88,3 +88,13 @@ supports the merged 10.0.6 release source and Linux packaging paths. No 10.0.6
 Termux candidate or runtime pass is claimed. Live Writer Add/Edit Citation,
 save/reopen, DOCX transfer and full desktop UI checks remain pending on both
 Linux architectures; source/API/OXT checks do not replace that acceptance.
+
+### APT catalogue delivery
+
+[APT publication run 38162290643](https://github.com/openresearchtools/apt/actions/runs/38162290643)
+completed successfully. The downloaded stable `Packages` index contains both
+`zotero 10.0.6-1` architectures, points to the matching `linux-10.0.6-r1` release
+assets, and records the exact SHA-256 hashes above and declared dependencies.
+`gpgv` verified the `InRelease` signature against the existing public archive
+key; the downloaded `Packages` digest and size also match that signed metadata.
+No new archive key, separate APT source or user token setup is required.
