@@ -19,3 +19,19 @@ stock LibreOffice OXT registration. Initial builds and these gates are pending.
 Live Writer citation editing, save/reopen and desktop UI acceptance are pending
 on both Linux architectures. Historical Termux validation does not establish
 Linux acceptance or new 10.0.6 Termux acceptance.
+
+### Initial source build and corrected test fixture
+
+Source revision `f26ffb2d0af02f11736099ac84f5e3e849a9fd04`:
+
+- [amd64 run](https://github.com/openresearchtools/zotero-linux-build-amd64/actions/runs/38161321349)
+- [arm64 run](https://github.com/openresearchtools/zotero-linux-build-arm64/actions/runs/38161323120)
+
+Both application source builds, package/ABI/dependency/checksum checks and APT
+installation without recommendations passed. The fresh Zotero API checks passed
+on amd64. The final LibreOffice registration fixture failed: it passed
+`--env:UserInstallation` rather than LibreOffice's `-env:UserInstallation`, so
+the intended private profile was not selected and a default-profile lock blocked
+registration. This is not a LibreOffice integration pass. The corrected fixture
+also selects APT's `/usr/bin/java`, rather than a runner-provided Java on PATH,
+and explicitly isolates the Zotero data directory. Repaired runs are pending.

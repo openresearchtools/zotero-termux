@@ -30,7 +30,10 @@ def main():
     app = Path(sys.argv[1] if len(sys.argv) > 1 else '/usr/lib/zotero')
     ini = configparser.ConfigParser()
     ini.read(app / 'app/application.ini')
-    subprocess.run(['java', '-version'], check=True)
+    java_home = Path('/usr/bin/java').resolve().parents[1]
+    subprocess.run(['/usr/bin/java', '-version'], check=True)
+    java_environment = {**os.environ, 'JAVA_HOME': str(java_home),
+                        'UNO_JAVA_JFW_JREHOME': java_home.as_uri()}
     with tempfile.TemporaryDirectory(prefix='zotero-linux-smoke-') as tmp:
         directory = Path(tmp)
         profile = directory / 'zotero'
@@ -93,9 +96,10 @@ def main():
         # Normal desktop unopkg and Java; no Termux wrapper or socket preload.
         user_install = '-env:UserInstallation=' + (directory / 'libreoffice').as_uri()
         oxt = app / 'integration/libreoffice/Zotero_LibreOffice_Integration.oxt'
-        subprocess.run(['unopkg', user_install, 'add', '--force', str(oxt)], check=True, timeout=90)
+        subprocess.run(['unopkg', user_install, 'add', '--force', str(oxt)],
+                       env=java_environment, check=True, timeout=90)
         listing = subprocess.check_output(['unopkg', user_install, 'list', 'org.Zotero.integration.openoffice'],
-                                          text=True, timeout=45)
+                                          env=java_environment, text=True, timeout=45)
         summary = listing.split('bundled Packages:')[0]
         assert 'is registered: yes' in summary
         print('Bundled LibreOffice OXT registered with the system Java runtime and standard Linux sockets; live Writer citation UI still requires separate acceptance')
