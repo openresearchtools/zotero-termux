@@ -26,21 +26,27 @@ function run(file, args, signal) {
 
 export async function libreOffice(action, { signal } = {}) {
   if (!['status', 'install'].includes(action)) throw new Error('Expected status or install');
-  const prefix = process.env.PREFIX;
-  if (!prefix || !prefix.startsWith('/') || process.getuid?.() === 0) {
-    return { ok: false, error: 'Run as the normal Termux application user with PREFIX set.' };
+  const termux = process.env.PREFIX?.startsWith('/data/');
+  const prefix = termux ? process.env.PREFIX : '/usr';
+  if (process.platform !== 'linux' || process.getuid?.() === 0) {
+    return { ok: false, error: 'Run as the normal Linux or Termux application user.' };
   }
-  const wrapper = join(prefix, 'lib/zotero/libreoffice-unopkg');
   const unopkg = join(prefix, 'bin/unopkg');
+  const wrapper = termux ? join(prefix, 'lib/zotero/libreoffice-unopkg') : unopkg;
   const extension = join(prefix, 'lib/zotero/integration/libreoffice/Zotero_LibreOffice_Integration.oxt');
   const requirements = [
-    [wrapper, 'zotero >= 10.0.3-2', constants.X_OK],
-    [join(prefix, 'lib/zotero/libreoffice-pipe-compat.so'), 'zotero >= 10.0.3-2'],
     [extension, 'zotero >= 10.0.3-2'],
-    [unopkg, 'libreoffice', constants.X_OK],
-    [join(prefix, 'lib/jvm/java-21-openjdk/bin/java'), 'openjdk-21', constants.X_OK],
-    [join(prefix, 'lib/jvm/java-21-openjdk/lib/libawt_xawt.so'), 'openjdk-21-x'],
+    [unopkg, termux ? 'libreoffice' : 'libreoffice-writer', constants.X_OK],
     [join(prefix, 'bin/pgrep'), 'procps', constants.X_OK],
+    ...(termux ? [
+      [wrapper, 'zotero >= 10.0.3-2', constants.X_OK],
+      [join(prefix, 'lib/zotero/libreoffice-pipe-compat.so'), 'zotero >= 10.0.3-2'],
+      [join(prefix, 'lib/jvm/java-21-openjdk/bin/java'), 'openjdk-21', constants.X_OK],
+      [join(prefix, 'lib/jvm/java-21-openjdk/lib/libawt_xawt.so'), 'openjdk-21-x'],
+    ] : [
+      ['/usr/bin/java', 'default-jre', constants.X_OK],
+      ['/usr/share/java/juh.jar', 'libreoffice-java-common'],
+    ]),
   ];
   const missing = [];
   for (const [path, pkg, mode] of requirements) {
@@ -62,10 +68,10 @@ export async function libreOffice(action, { signal } = {}) {
     };
   }
   if (action === 'install') {
-    const install = await run(wrapper, [unopkg, 'add', '--force', extension], signal);
+    const install = await run(wrapper, [...(termux ? [unopkg] : []), 'add', '--force', extension], signal);
     if (install.code !== 0) return { ok: false, action, libreOfficeRunning, install };
   }
-  const listing = await run(wrapper, [unopkg, 'list', 'org.Zotero.integration.openoffice'], signal);
+  const listing = await run(wrapper, [...(termux ? [unopkg] : []), 'list', 'org.Zotero.integration.openoffice'], signal);
   const listed = listing.code === 0 && listing.stdout.includes('org.Zotero.integration.openoffice');
   // Read the bundle's status, not a possibly still-enabled child component.
   const summary = listing.stdout.split(/\n\s*bundled Packages:/)[0];

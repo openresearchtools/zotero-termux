@@ -1,6 +1,6 @@
 ---
 name: zotero-libreoffice
-description: Install or repair Zotero's bundled citation extension in native Termux LibreOffice, check its prerequisites, and verify live citations in Writer. Use for Zotero–LibreOffice setup or citation-plugin installation failures.
+description: Install or repair Zotero's bundled citation extension in native Linux or Termux LibreOffice, check its prerequisites, and verify live citations in Writer. Use for Zotero–LibreOffice setup or citation-plugin installation failures.
 ---
 
 <!-- SPDX-License-Identifier: AGPL-3.0-only -->
@@ -15,12 +15,19 @@ node ../../libreoffice.mjs install
 ```
 
 Resolve those paths from this SKILL.md's directory, not the working project.
-The helper needs Zotero 10.0.3-2 or later from this fork. It uses the same
-packaged installer workaround as Zotero Settings → Cite → Word Processors →
-Install/Reinstall LibreOffice Add-in. No compiler or repository checkout is
-needed on the device. LibreOffice and the bundled official OXT remain unchanged.
+The helper needs Zotero from this fork. On native Linux, it uses standard
+`/usr/bin/unopkg` and the ordinary desktop sockets. Only Termux uses the packaged
+installer workaround (Zotero 10.0.3-2 or later), also used by Zotero Settings →
+Cite → Word Processors → Install/Reinstall LibreOffice Add-in. No compiler or
+repository checkout is needed. LibreOffice and the bundled official OXT remain
+unchanged on both platforms.
 
-Zotero declares `openjdk-21` and `openjdk-21-x` as apt dependencies, so a normal
+Linux's APT package requires `default-jre`, `libreoffice-java-common` and
+`libreoffice-writer`; APT installs their own dependencies too. Repair partial
+installations with `sudo apt --fix-broken install`. Load the optional Pi package
+from `/usr/share/zotero/pi`. All application updates come from APT.
+
+On Termux, Zotero declares `openjdk-21` and `openjdk-21-x` as apt dependencies, so a normal
 Zotero installation already supplies Java. Install `libreoffice` when setup is
 requested and it is missing. If the tool reports missing Java after a partial or
 manual installation, repair it with `pkg install openjdk-21 openjdk-21-x`. Use the configured Termux

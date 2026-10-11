@@ -1,0 +1,19 @@
+{
+  "zotero_version": "10.0.6",
+  "zotero_commit": "536244c2771f590abab9c09a3c27e615e0b318ff",
+  "package_revision": 0,
+  "gecko_version": "140.17.0esr",
+  "gecko_source_sha256": "4d6ed3b18b2069c55bab12d8ba95da6013ac0b036d8a031df8b9f39a25d05c33",
+  "gecko": {
+    "amd64": {
+      "architecture": "x86_64",
+      "url": "https://archive.mozilla.org/pub/firefox/releases/140.17.0esr/linux-x86_64/en-US/firefox-140.17.0esr.tar.xz",
+      "sha256": "86d049070ad80b74d8e674793e22d28923b4a7a1da06b4d65402f91c67a10314"
+    },
+    "arm64": {
+      "architecture": "arm64",
+      "url": "https://archive.mozilla.org/pub/firefox/releases/140.17.0esr/linux-aarch64/en-US/firefox-140.17.0esr.tar.xz",
+      "sha256": "dd579f48405a7065f0f643ddb71a8de0f48a9d984c2783dee2ca173081850084"
+    }
+  }
+}

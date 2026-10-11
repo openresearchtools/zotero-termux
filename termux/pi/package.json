@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "license": "AGPL-3.0-only",
-  "description": "Native Termux Zotero LibreOffice installation for Pi",
+  "description": "Native Linux and Termux Zotero LibreOffice installation for Pi",
   "keywords": ["pi-package"],
   "peerDependencies": { "typebox": "*" },
   "pi": {

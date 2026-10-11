@@ -2,11 +2,11 @@
 import { Type } from 'typebox';
 import { libreOffice } from './libreoffice.mjs';
 
-export default function zoteroTermux(pi) {
+export default function zoteroLibreOffice(pi) {
   pi.registerTool({
     name: 'zotero_libreoffice',
     label: 'Zotero LibreOffice',
-    description: 'Check native Termux Zotero/LibreOffice prerequisites and extension registration, or install/reinstall Zotero’s bundled LibreOffice extension. Read the zotero-libreoffice skill. Installation requires LibreOffice to be closed; this tool never closes documents or installs OS packages.',
+    description: 'Check native Linux or Termux Zotero/LibreOffice prerequisites and extension registration, or install/reinstall Zotero’s bundled LibreOffice extension. Read the zotero-libreoffice skill. Installation requires LibreOffice to be closed; this tool never closes documents or installs OS packages.',
     parameters: Type.Object({ action: Type.Union([Type.Literal('status'), Type.Literal('install')]) }),
     async execute(_id, { action }, signal) {
       const result = await libreOffice(action, { signal });

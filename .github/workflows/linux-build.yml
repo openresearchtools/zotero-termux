@@ -1,0 +1,97 @@
+name: Linux Zotero packages
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish both verified packages as a stable Linux release
+        type: boolean
+        default: false
+permissions:
+  contents: read
+  actions: read
+concurrency:
+  group: zotero-linux-release-${{ github.ref }}
+  cancel-in-progress: false
+jobs:
+  collect:
+    strategy:
+      fail-fast: false
+      matrix:
+        architecture: [amd64, arm64]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Dispatch native builder and verify its completed package
+        env:
+          GH_TOKEN: ${{ secrets.TERMUX }}
+          ARCHITECTURE: ${{ matrix.architecture }}
+        run: |
+          python3 termux/scripts/remote-build.py "$RUNNER_TEMP/$ARCHITECTURE" \
+            --platform linux --architecture "$ARCHITECTURE"
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
+        with:
+          name: zotero-linux-${{ matrix.architecture }}-${{ github.sha }}
+          path: ${{ runner.temp }}/${{ matrix.architecture }}/
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 90
+  publish:
+    needs: collect
+    if: inputs.publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    permissions:
+      contents: write
+      actions: read
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - name: Collect both verified source-matched packages
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh run download "$GITHUB_RUN_ID" --repo "$GITHUB_REPOSITORY" \
+            --pattern "zotero-linux-*-$GITHUB_SHA" --dir "$RUNNER_TEMP/release"
+          for architecture in amd64 arm64; do
+            python3 linux/scripts/verify.py "$RUNNER_TEMP/release/zotero-linux-$architecture-$GITHUB_SHA" \
+              --architecture "$architecture" --source-sha "$GITHUB_SHA"
+          done
+      - name: Publish APT packages from this exact source revision
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          python3 - <<'PY'
+          import json, os, pathlib, shutil, subprocess
+          root = pathlib.Path(os.environ['RUNNER_TEMP']) / 'release'
+          pins = json.loads(pathlib.Path('linux/upstream.json').read_text())
+          tag = f"linux-{pins['zotero_version']}-r{pins['package_revision']}"
+          assets = []
+          checksums = []
+          for arch in ['amd64', 'arm64']:
+              directory = root / f"zotero-linux-{arch}-{os.environ['GITHUB_SHA']}"
+              record = json.loads((directory / 'build-source.json').read_text())
+              assets.append(str(directory / record['package']))
+              checksums.append(f"{record['sha256']}  {record['package']}\n")
+              for name in ['build-source', 'builder']:
+                  destination = root / f'{name}-{arch}.json'
+                  shutil.copyfile(directory / f'{name}.json', destination)
+                  assets.append(str(destination))
+          sums = root / 'SHA256SUMS'
+          sums.write_text(''.join(checksums))
+          notes = root / 'release-notes.md'
+          notes.write_text(f'''Unofficial native Linux Zotero {pins['zotero_version']} for amd64 and arm64, built from the updated fork source.
+
+          APT installs the native libraries, default-jre, libreoffice-java-common and Writer. The stock bundled Zotero LibreOffice extension and desktop socket paths are retained. Local API access and unattended remembered-key authorization are enabled by default; users can disable them in Zotero. Built-in application updates are disabled; use APT upgrades.
+
+          Both native builders install the packages through APT with no recommended dependencies, check the packaged ABI/dependencies/checksums, launch fresh Zotero profiles, verify local reads and authorized writes, and register the official OXT with system Java. Live Writer citation editing and desktop UI acceptance are not established by these smoke checks.
+
+          Source: {os.environ['GITHUB_SHA']}; upstream release-source commit: {pins['zotero_commit']}; Gecko: {pins['gecko_version']}. Exact component pins and source locations are in linux/upstream.json, the source tag and bundled documentation. Upstream had not published a 10.0.6 Git tag when this source revision was selected.
+          ''')
+          subprocess.run(['gh', 'release', 'create', tag, '--repo', os.environ['GITHUB_REPOSITORY'],
+                          '--target', os.environ['GITHUB_SHA'], '--title', f"Zotero {pins['zotero_version']} — Linux amd64 / arm64",
+                          '--notes-file', str(notes), *assets, str(sums)], check=True)
+          PY
