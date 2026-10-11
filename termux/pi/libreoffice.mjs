@@ -28,7 +28,8 @@ export async function libreOffice(action, { signal } = {}) {
   if (!['status', 'install'].includes(action)) throw new Error('Expected status or install');
   const termux = process.env.PREFIX?.startsWith('/data/');
   const prefix = termux ? process.env.PREFIX : '/usr';
-  if (process.platform !== 'linux' || process.getuid?.() === 0) {
+  if ((process.platform !== 'linux' && !(termux && process.platform === 'android'))
+      || process.getuid?.() === 0) {
     return { ok: false, error: 'Run as the normal Linux or Termux application user.' };
   }
   const unopkg = join(prefix, 'bin/unopkg');
