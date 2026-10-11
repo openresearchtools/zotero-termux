@@ -35,6 +35,8 @@ def main():
         directory = Path(tmp)
         profile = directory / 'zotero'
         profile.mkdir()
+        data = directory / 'library'
+        data.mkdir()
         # A private test port avoids contact with any personal Zotero instance.
         import socket
         with socket.socket() as sock:
@@ -42,6 +44,8 @@ def main():
             port = sock.getsockname()[1]
         (profile / 'user.js').write_text(
             f'user_pref("extensions.zotero.httpServer.port", {port});\n'
+            f'user_pref("extensions.zotero.dataDir", {json.dumps(str(data))});\n'
+            'user_pref("extensions.zotero.useDataDir", true);\n'
             'user_pref("extensions.zotero.firstRun2", false);\n'
             'user_pref("extensions.zotero.automaticScraperUpdates", false);\n')
         with (directory / 'zotero.log').open('w+') as log:
@@ -87,7 +91,7 @@ def main():
                         os.killpg(child.pid, signal.SIGKILL)
                         child.wait()
         # Normal desktop unopkg and Java; no Termux wrapper or socket preload.
-        user_install = '--env:UserInstallation=' + (directory / 'libreoffice').as_uri()
+        user_install = '-env:UserInstallation=' + (directory / 'libreoffice').as_uri()
         oxt = app / 'integration/libreoffice/Zotero_LibreOffice_Integration.oxt'
         subprocess.run(['unopkg', user_install, 'add', '--force', str(oxt)], check=True, timeout=90)
         listing = subprocess.check_output(['unopkg', user_install, 'list', 'org.Zotero.integration.openoffice'],
