@@ -8,6 +8,12 @@ released on 7 October 2026. Upstream had not published its `10.0.6` Git tag when
 checked on 11 October. The recorded source commit has `10.0.6.SOURCE` and the
 matching Gecko update; builds never follow its moving `10.0` branch.
 
+The [10.0.6-1 Linux release](https://github.com/openresearchtools/zotero-termux/releases/tag/linux-10.0.6-r1)
+has passed native source builds, dependency/package checks, APT installation,
+fresh-profile automation checks and LibreOffice registration using the
+APT-installed OpenJDK 21 on both architectures. Live Writer citation UI
+acceptance remains pending; see [the actual validation record](VALIDATION.md).
+
 These are **application source builds**, not repackaged Zotero downloads. Each
 builder checks the source against the pinned upstream commit, applies the two
 shared automation patches from `termux/packages/zotero`, runs `npm ci` and

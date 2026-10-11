@@ -54,3 +54,37 @@ Revision 1 resolves `default-jre-headless`'s actual OpenJDK package through
 dpkg, then uses that package's Java executable/home explicitly for verification.
 The test change does not alter the application or plugin. Revision 1 builds
 and the stricter installed-Java checks are pending.
+
+### Revision 1 — both native builders and publication passed
+
+Actual candidate/source: `ec3a5463f8212411b46bec16d5065a013adf39e4`.
+Packages: `zotero_10.0.6-1_amd64.deb` and `zotero_10.0.6-1_arm64.deb`.
+
+- [amd64 native build and installed checks](https://github.com/openresearchtools/zotero-linux-build-amd64/actions/runs/38162029851): **passed**.
+- [arm64 native build and installed checks](https://github.com/openresearchtools/zotero-linux-build-arm64/actions/runs/38162029640): **passed**.
+- [source collection, re-verification and publication](https://github.com/openresearchtools/zotero-termux/actions/runs/38162016520): **passed**.
+- [Stable Linux release](https://github.com/openresearchtools/zotero-termux/releases/tag/linux-10.0.6-r1).
+
+Both runners built the application from the updated source with only the two
+automation patches, verified the Linux ABI and complete external-library
+mapping, installed the DEB and mandatory dependencies via APT without
+recommendations, checked runtime linking, then launched fresh Zotero profiles
+and libraries. API reads, unattended remembered-key authorization, key reuse
+and rejection of unauthenticated writes passed. Both OXTs registered successfully
+using **OpenJDK 21.0.12.1 supplied by default-jre's actual APT dependency**, with
+ordinary Linux `unopkg`, private LibreOffice profiles and standard sockets.
+The package validation also checks the APT update policy and omitted updater;
+the update UI itself was not exercised. No Termux socket library is shipped.
+
+Published SHA-256:
+
+```text
+8884595ff51a16e087bb97e4198dacaba4c3ef9005aaa256508e0e92c079354f  zotero_10.0.6-1_amd64.deb
+d74f51a6de8093b48c9fed7f9f8edd6ea9b1adb81db4ee8cf58db37bb7257a97  zotero_10.0.6-1_arm64.deb
+```
+
+The existing Termux x86_64 builder was updated to the shared verifier that
+supports the merged 10.0.6 release source and Linux packaging paths. No 10.0.6
+Termux candidate or runtime pass is claimed. Live Writer Add/Edit Citation,
+save/reopen, DOCX transfer and full desktop UI checks remain pending on both
+Linux architectures; source/API/OXT checks do not replace that acceptance.
