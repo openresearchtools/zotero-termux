@@ -35,3 +35,22 @@ the intended private profile was not selected and a default-profile lock blocked
 registration. This is not a LibreOffice integration pass. The corrected fixture
 also selects APT's `/usr/bin/java`, rather than a runner-provided Java on PATH,
 and explicitly isolates the Zotero data directory. Repaired runs are pending.
+
+### Revision 0 and stricter dependency verification
+
+The repaired source revision `6714251e9c48d5ec1472b21652f77c115c1fcfce`
+passed both native builds and all existing gates:
+
+- [amd64](https://github.com/openresearchtools/zotero-linux-build-amd64/actions/runs/38161580016)
+- [arm64](https://github.com/openresearchtools/zotero-linux-build-arm64/actions/runs/38161579290)
+- [collection and publication](https://github.com/openresearchtools/zotero-termux/actions/runs/38161566508)
+
+The source-built `10.0.6-0` packages were published in `linux-10.0.6-r0`.
+Both API checks and normal-socket OXT registration passed. Log review showed
+that `/usr/bin/java` still selected the runner's preinstalled Temurin 17,
+despite APT installing `default-jre`. Thus that run does not establish OXT
+registration with the Java runtime supplied by our declared APT dependency.
+Revision 1 resolves `default-jre-headless`'s actual OpenJDK package through
+dpkg, then uses that package's Java executable/home explicitly for verification.
+The test change does not alter the application or plugin. Revision 1 builds
+and the stricter installed-Java checks are pending.

@@ -6,6 +6,7 @@ import json
 import os
 from pathlib import Path
 import signal
+import re
 import subprocess
 import sys
 import tempfile
@@ -30,8 +31,15 @@ def main():
     app = Path(sys.argv[1] if len(sys.argv) > 1 else '/usr/lib/zotero')
     ini = configparser.ConfigParser()
     ini.read(app / 'app/application.ini')
-    java_home = Path('/usr/bin/java').resolve().parents[1]
-    subprocess.run(['/usr/bin/java', '-version'], check=True)
+    # Hosted runners also have manually selected Java alternatives. Resolve the
+    # actual default-jre dependency so preinstalled Temurin cannot hide a gap.
+    dependencies = subprocess.check_output(
+        ['dpkg-query', '-W', '-f=${Depends}', 'default-jre-headless'], text=True)
+    package = re.search(r'openjdk-[0-9]+-jre-headless', dependencies).group()
+    files = subprocess.check_output(['dpkg-query', '-L', package], text=True).splitlines()
+    java = next(Path(name) for name in files if name.endswith('/bin/java'))
+    java_home = java.parent.parent
+    subprocess.run([str(java), '-version'], check=True)
     java_environment = {**os.environ, 'JAVA_HOME': str(java_home),
                         'UNO_JAVA_JFW_JREHOME': java_home.as_uri()}
     with tempfile.TemporaryDirectory(prefix='zotero-linux-smoke-') as tmp:
