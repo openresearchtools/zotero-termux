@@ -6,13 +6,18 @@ This GitHub fork retains Zotero’s complete upstream source and history. The
 the official `termux/termux-packages` framework, Android NDK toolchain, dependency
 handling, prefix substitution, ELF cleanup, and Debian packaging.
 
-**Zotero 10.0.3-2 was validated on aarch64 Android in native Termux with Termux:X11.** The library UI,
-PDF reader, import/export, bibliography generation, unattended local API writes,
-and LibreOffice citations have passed runtime checks. See [VALIDATION.md](VALIDATION.md) for build
-links, cache evidence, test scope, and remaining desktop integration limitations.
-The [10.0.5 testing prerelease](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.5-r0)
-has passed ARM64 and x86_64 build/package checks. The earlier runtime evidence
-does not establish Android UI validation of these new packages.
+The [stable 10.0.6 release](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.6-r0)
+has passed native builds and package/ABI checks for both architectures. On
+x86_64 Android 17, the installed package passed library UI rendering, unattended
+API writes and edits, restart persistence, original LibreOffice extension
+registration and the packaged Pi helper's installation/status checks. The signed
+stable APT catalogue and an actual native Termux APT download were verified.
+
+The earlier **10.0.3-2 aarch64** validation includes the PDF reader,
+import/export, bibliography generation and live LibreOffice citation/document
+operations. Those broader aarch64 UI and Writer citation checks have not been
+rerun for 10.0.6. See [VALIDATION.md](VALIDATION.md) for exact build revisions,
+checksums, runtime coverage and limitations.
 
 ## Packages
 
@@ -21,8 +26,8 @@ does not establish Android UI validation of these new packages.
 * `zotero`: the upstream Zotero application, including its UI, reader, editor,
   translators, styles, icons, licenses, and integrations. The upstream `npm run
   build`, `prepare_build`, `fetch_xulrunner`/`modify_omni`, and `app/build.sh`
-  perform application assembly. The recipe builds the pinned upstream release tag
-  from this fork and applies the Termux patches during packaging.
+  perform application assembly. The recipe builds the exact stable release-source
+  commit recorded in `upstream.lock` and applies the Termux patches during packaging.
 
 As in upstream Zotero, Gecko is a separate build input that is bundled into the
 finished application. Installing `zotero` includes its native Bionic runtime;
@@ -134,7 +139,7 @@ Gecko package, manifest, and checksums in `zotero-gecko-aarch64.tar.gz`. Reuse
 that permanent release asset after an Actions artifact expires:
 
 ```sh
-gh workflow run termux-build.yml --ref main -f gecko_release=termux-10.0.3-r1
+gh workflow run termux-build.yml --ref main -f gecko_release=termux-10.0.6-r0
 ```
 
 Choose either `gecko_run` or `gecko_release`. Both paths verify the component
@@ -162,7 +167,7 @@ and subsequent version history are in [UPSTREAM_HISTORY.md](UPSTREAM_HISTORY.md)
 The root source files, submodule definitions, `COPYING`, and upstream README
 remain unchanged from the recorded release source. CI fetches the exact commit from
 `zotero/zotero`, checks its exact commit, and rejects source differences outside
-`termux/`, the added AGPLv3 `LICENSE`, and our two native-build workflows. The
+the platform packaging directories, added AGPLv3 `LICENSE`, and native-build workflows. The
 recipe builds that pinned source and applies the Termux patches during
 packaging. For 10.0.6, upstream has not yet published its Git tag; the exact
 release-source commit and named fork source tag are recorded in
@@ -220,15 +225,16 @@ If the repository is already configured, just run `apt update` and
 stable packages are picked up by the hourly catalogue refresh and are available
 through normal APT upgrades.
 
-Alternatively, download `zotero_10.0.3-2_aarch64.deb` from the
-[Termux 10.0.3-r2 release](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.3-r2)
-and install it from the download directory:
+Alternatively, download `zotero_10.0.6_aarch64.deb` or the matching
+`zotero_10.0.6_x86_64.deb` from the
+[Termux 10.0.6 release](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.6-r0)
+and install the package for the device's architecture from the download directory:
 
 ```sh
 pkg install x11-repo
 pkg update
 pkg install termux-x11-nightly ttf-dejavu
-apt install ./zotero_10.0.3-2_aarch64.deb
+apt install ./zotero_10.0.6_aarch64.deb
 ```
 
 Install the [official Termux:X11 Android APK](https://github.com/termux/termux-x11/releases/tag/nightly)

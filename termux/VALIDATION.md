@@ -285,3 +285,86 @@ Published on 2026-10-06 from packaging commit
 contain those exact validated build outputs. These are testing packages. Android
 UI, installation through nightly APT, and LibreOffice runtime checks for these
 new packages are not established by the older 10.0.3-2 evidence above.
+
+## Zotero 10.0.6 stable release — 11 October 2026
+
+[Stable release and checksums](https://github.com/openresearchtools/zotero-termux/releases/tag/termux-10.0.6-r0)
+were published from packaging commit
+`4da0720ee41e5c3de692a0ba6d30fe5b3df4b545`. The complete upstream release
+source is `536244c2771f590abab9c09a3c27e615e0b318ff`, preserved by this fork's
+`zotero-release-source-10.0.6` tag. Upstream had not published its 10.0.6 Git
+tag when checked on 11 October. Native Gecko is Firefox ESR 140.17.0, compiled
+from the checksum-pinned Mozilla source using the pinned Termux framework.
+
+- [Final aarch64 build and x86_64 collection](https://github.com/openresearchtools/zotero-termux/actions/runs/38167719162): successful.
+- [Final isolated x86_64 builder](https://github.com/openresearchtools/zotero-termux-build-x86_64/actions/runs/38168660555): successful.
+- [Initial aarch64 engine compilation](https://github.com/openresearchtools/zotero-termux/actions/runs/38163187086) and [x86_64 engine compilation](https://github.com/openresearchtools/zotero-termux-build-x86_64/actions/runs/38163199687) succeeded. Final app builds reused those completed, fingerprint-verified components and skipped engine compilation.
+- Both final packages passed the native Bionic audit again: 14 aarch64 and 13 x86_64 runtime ELF files, correct Android linker/architecture, no glibc runtime dependencies, recursive archive checks, exact application version, original UI/licenses, API defaults, APT update policy and packaged LibreOffice/Pi integration.
+- Both preserved Gecko archives passed recipe/framework/pin fingerprint, package architecture/version and SHA-256 checks. They are build inputs; the application DEBs already contain their runtime.
+
+| Package | SHA-256 |
+| --- | --- |
+| `zotero_10.0.6_aarch64.deb` | `ee28d468c0793212fee343a51605fc50c90cc455c718ada444b065f0ad8a8c1b` |
+| `zotero_10.0.6_x86_64.deb` | `3989eea4a770e0f16f0e032c75e22fe0e11d269ade25ee46bc990a163d3ceca2` |
+
+The stable public release tag resolves to the exact packaging commit above.
+Its complete asset set, sizes and GitHub upload SHA-256 digests were compared
+with the verified local CI outputs. Per-architecture source manifests, upstream
+pins and independently reusable Gecko archives accompany the packages.
+
+### Native Android x86_64 runtime
+
+The final package was installed through native Termux APT under its actual app
+UID and Android application SELinux context on Android 17, without a PRoot/glibc
+environment. Disposable Zotero libraries/profiles and LibreOffice profiles were
+used; existing personal profiles were not used. Xvfb provided the test X server.
+
+| Check | Result |
+| --- | --- |
+| Version and ABI | Zotero 10.0.6 / Gecko 140.17.0; process maps contain Android Bionic libc and the bundled libxul |
+| Library UI | Actual window renders the persisted synthetic journal article; stock LibreOffice installer introduction also renders |
+| Default API | Reads work without overriding the packaged API settings; write without a key returns 401 |
+| Authorization and writes | Unattended remembered key; journal article creation/title edit and child-note creation succeed |
+| Restart | Library edit, server identity and reusable authorization persist |
+| Java/plugin | Native OpenJDK 21.0.12 and LibreOffice 26.8.0.3 register the unchanged bundled OXT through the packaged socket helper |
+| Packaged Pi helper | `status`, `install`, then `status` succeed in its own fresh profile and report the bundle registered/enabled |
+
+The first helper check exposed a regression in the Linux sharing change:
+native Termux Node reports `process.platform === 'android'`, which the new
+Linux-only platform check rejected. Commit `4da0720ee` restores that supported
+native Android path while retaining the Linux path and normal-user checks.
+Both final packages were rebuilt after the fix. The installed helper was
+compared byte-for-byte with the corrected source.
+
+A combined test also encountered a lock in its temporary LibreOffice profile
+after stopping the test Zotero process. The Pi helper was retested with its own
+fresh HOME/configuration profile, separately from Zotero startup and explicit
+OXT registration; the final combined check passed. No personal profile lock
+was removed and no unrelated application process was stopped.
+
+### Signed APT delivery
+
+[APT publication run 38169442728](https://github.com/openresearchtools/apt/actions/runs/38169442728)
+completed successfully. The stable `InRelease` signature was independently
+verified with the repository's public key; its signed `Packages` size and
+SHA-256 matched the downloaded catalogue. Both native Termux 10.0.6 records
+point to the new stable release, with exact package hashes/sizes and mandatory
+`openjdk-21` / `openjdk-21-x` dependencies. Existing Linux amd64/arm64 10.0.6-1
+records and their `default-jre`, `libreoffice-java-common` and versioned
+`libreoffice-writer` dependencies remain present.
+
+Under the actual Termux app UID, `apt-get update` accepted the signed catalogue
+and `apt-cache policy zotero` selected 10.0.6 from the stable repository. A
+reinstall download into an empty private package cache fetched the published
+111 MB x86_64 DEB through the configured repository and matched SHA-256
+`3989eea4a770e0f16f0e032c75e22fe0e11d269ade25ee46bc990a163d3ceca2`.
+
+### Coverage limits
+
+The new aarch64 package has build/ABI verification, not a fresh Android UI run.
+The Settings installer flow and live Writer citation/edit/save/reopen/document
+transfer operations have not been rerun for 10.0.6 on either architecture.
+Successful OXT registration is not that functional document test. The earlier
+10.0.3-2 full aarch64 citation evidence remains historical evidence above.
+Cloud sync, connectors and every desktop feature are not covered by this smoke
+check.
