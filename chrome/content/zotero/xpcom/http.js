@@ -707,7 +707,16 @@ Zotero.HTTP = new function () {
 			let encoded = btoa(String.fromCharCode(...bytes));
 			headers.set('Authorization', `Basic ${encoded}`);
 		}
+		// fetch() drops Referer as a forbidden header, so pass it as the request referrer
+		let referrer = headers.get('Referer');
+		if (referrer) {
+			headers.delete('Referer');
+			fetchOptions.referrer = referrer;
+			fetchOptions.referrerPolicy = 'unsafe-url';
+		}
 		fetchOptions.headers = headers;
+		// Send cookies, except for requests with embedded credentials, matching request()
+		fetchOptions.credentials = ctx.username ? 'omit' : 'include';
 
 		// Start the request with a connect timeout
 		let connectTimerID;
@@ -1042,7 +1051,7 @@ Zotero.HTTP = new function () {
 		if (!content) {
 			return false;
 		}
-		var parts = content.split(/;\s*url=/);
+		var parts = content.split(/;\s*url=/i);
 		// If there's a redirect to another URL in less than 15 seconds,
 		// follow it
 		if (parts.length === 2 && parseInt(parts[0]) <= 15) {

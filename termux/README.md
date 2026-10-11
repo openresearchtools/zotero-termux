@@ -1,6 +1,6 @@
 # Zotero for native Termux
 
-Unofficial aarch64 and x86_64 packaging of Zotero 10.0.5 for Android's **Bionic libc**.
+Unofficial aarch64 and x86_64 packaging of Zotero 10.0.6 for Android's **Bionic libc**.
 This GitHub fork retains Zotero’s complete upstream source and history. The
 `termux/` directory contains normal Termux `build.sh` recipes and patches. It uses
 the official `termux/termux-packages` framework, Android NDK toolchain, dependency
@@ -16,7 +16,7 @@ does not establish Android UI validation of these new packages.
 
 ## Packages
 
-* `zotero-gecko`: Firefox ESR 140.15.0 compiled for Bionic using Termux's Firefox
+* `zotero-gecko`: Firefox ESR 140.17.0 compiled for Bionic using Termux's Firefox
   140 port. This is a build dependency, isolated from an installed Firefox.
 * `zotero`: the upstream Zotero application, including its UI, reader, editor,
   translators, styles, icons, licenses, and integrations. The upstream `npm run
@@ -160,11 +160,14 @@ and subsequent version history are in [UPSTREAM_HISTORY.md](UPSTREAM_HISTORY.md)
 `upstream.lock` records the version and commit currently being packaged.
 
 The root source files, submodule definitions, `COPYING`, and upstream README
-remain unchanged from the recorded release. CI fetches that release tag from
+remain unchanged from the recorded release source. CI fetches the exact commit from
 `zotero/zotero`, checks its exact commit, and rejects source differences outside
 `termux/`, the added AGPLv3 `LICENSE`, and our two native-build workflows. The
-recipe builds the same release tag and applies the Termux patches during
-packaging.
+recipe builds that pinned source and applies the Termux patches during
+packaging. For 10.0.6, upstream has not yet published its Git tag; the exact
+release-source commit and named fork source tag are recorded in
+`UPSTREAM_HISTORY.md`. Linux builds share this updated source and apply only
+the automation patches; see [`../linux/README.md`](../linux/README.md).
 
 Future stable releases, including later 10.x and 11.x versions, are merged into
 this same `main` history. Fetch upstream release tags, merge the selected stable
@@ -322,7 +325,7 @@ license notices, and upstream application assets remain intact.
 * Zotero source: https://github.com/zotero/zotero (AGPL-3.0)
 * Build documentation: https://www.zotero.org/support/dev/client_coding/building_the_desktop_app
 * Local API: https://www.zotero.org/support/dev/web_api/v3/local_api
-* Gecko source: https://archive.mozilla.org/pub/firefox/releases/140.15.0esr/source/
+* Gecko source: https://archive.mozilla.org/pub/firefox/releases/140.17.0esr/source/
 * Termux framework and original patches: https://github.com/termux/termux-packages
 
 Zotero and the packaging additions use the GNU Affero General Public

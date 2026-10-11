@@ -42,7 +42,7 @@ jobs:
         run: |
           case "$TERMUX_ARCH" in aarch64|x86_64) ;; *) exit 1;; esac
           source upstream.lock
-          git -C .. fetch --no-tags --depth 1 https://github.com/zotero/zotero.git "refs/tags/$ZOTERO_VERSION"
+          git -C .. fetch --no-tags --depth 1 https://github.com/zotero/zotero.git "$ZOTERO_COMMIT"
           test "$(git -C .. rev-parse 'FETCH_HEAD^{commit}')" = "$ZOTERO_COMMIT"
           git -C .. diff --exit-code "$ZOTERO_COMMIT" HEAD -- . \
             ':(exclude)termux' ':(exclude)LICENSE' ':(exclude).github/workflows/termux-build.yml' \

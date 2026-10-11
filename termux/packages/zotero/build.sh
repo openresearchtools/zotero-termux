@@ -3,10 +3,10 @@ TERMUX_PKG_DESCRIPTION="Zotero reference manager for native Bionic Termux (unoff
 TERMUX_PKG_LICENSE="AGPL-3.0, MPL-2.0"
 TERMUX_PKG_LICENSE_FILE="COPYING"
 TERMUX_PKG_MAINTAINER="@openresearchtools"
-TERMUX_PKG_VERSION=10.0.5
+TERMUX_PKG_VERSION=10.0.6
 TERMUX_PKG_REVISION=0
 TERMUX_PKG_SRCURL=git+https://github.com/openresearchtools/zotero-termux.git
-TERMUX_PKG_GIT_BRANCH="$TERMUX_PKG_VERSION"
+TERMUX_PKG_GIT_BRANCH="zotero-release-source-10.0.6"
 TERMUX_PKG_EXCLUDED_ARCHES="arm, i686"
 TERMUX_PKG_BUILD_IN_SRC=true
 TERMUX_PKG_AUTO_UPDATE=false
@@ -17,7 +17,7 @@ TERMUX_PKG_SUGGESTS="libreoffice"
 
 termux_step_post_get_source() {
 	# The tag is convenient for Termux's git downloader, but a moved tag must fail.
-	test "$(git rev-parse HEAD)" = ca61760225d25191d0c65acbfd0c4f12a172d263
+	test "$(git rev-parse HEAD)" = 536244c2771f590abab9c09a3c27e615e0b318ff
 }
 
 termux_step_pre_configure() {
@@ -36,7 +36,7 @@ termux_step_pre_configure() {
 termux_step_configure() {
 	local runtime="$TERMUX_PREFIX/lib/zotero-gecko/firefox"
 	test -f "$runtime/libxul.so"
-	grep -Fx 'Milestone=140.15.0' "$runtime/platform.ini"
+	grep -Fx 'Milestone=140.17.0' "$runtime/platform.ini"
 	"$READELF" -l "$runtime/firefox-bin" | grep -F '/system/bin/linker64'
 	mkdir -p app/xulrunner
 	# Supply the native runtime to upstream fetch_xulrunner. It still performs

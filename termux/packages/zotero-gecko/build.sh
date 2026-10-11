@@ -2,12 +2,12 @@ TERMUX_PKG_HOMEPAGE=https://www.mozilla.org/firefox
 TERMUX_PKG_DESCRIPTION="Firefox ESR runtime built for native Bionic Zotero (build dependency)"
 TERMUX_PKG_LICENSE="MPL-2.0"
 TERMUX_PKG_MAINTAINER="@openresearchtools"
-TERMUX_PKG_VERSION="140.15.0"
-TERMUX_PKG_REVISION=1
+TERMUX_PKG_VERSION="140.17.0"
+TERMUX_PKG_REVISION=0
 TERMUX_PKG_EXCLUDED_ARCHES="arm, i686"
 TERMUX_RUST_VERSION=1.86.0
 TERMUX_PKG_SRCURL=https://archive.mozilla.org/pub/firefox/releases/${TERMUX_PKG_VERSION}esr/source/firefox-${TERMUX_PKG_VERSION}esr.source.tar.xz
-TERMUX_PKG_SHA256=358bb03c550f95172f1e31694e4287da3411560df91e931cb25210efdf90e524
+TERMUX_PKG_SHA256=4d6ed3b18b2069c55bab12d8ba95da6013ac0b036d8a031df8b9f39a25d05c33
 # ffmpeg and pulseaudio are dependencies through dlopen(3):
 TERMUX_PKG_DEPENDS="ffmpeg, fontconfig, freetype, gdk-pixbuf, glib, gtk3, libandroid-shmem, libandroid-spawn, libc++, libcairo, libevent, libffi, libice, libjpeg-turbo, libnspr, libnss, libpixman, libsm, libvpx, libwebp, libx11, libxcb, libxcomposite, libxdamage, libxext, libxfixes, libxrandr, libxtst, pango, pulseaudio, zlib"
 TERMUX_PKG_BUILD_DEPENDS="libcpufeatures, libice, libsm"
